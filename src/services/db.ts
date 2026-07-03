@@ -250,7 +250,10 @@ function writeTable<T>(tableName: string, data: T[]): void {
 
 // Database Engine initialization
 export const initializeDatabase = (force = false): void => {
-  if (force || !localStorage.getItem(DB_PREFIX + 'UserAccount')) {
+  const versionKey = DB_PREFIX + 'db_version_v3'; // Version upgrade key to force reseed
+  const needsReseed = !localStorage.getItem(versionKey);
+
+  if (force || !localStorage.getItem(DB_PREFIX + 'UserAccount') || needsReseed) {
     writeTable<UserAccount>('UserAccount', INITIAL_USERS);
     writeTable<Doctor>('Doctor', INITIAL_DOCTORS);
     writeTable<Staff>('Staff', INITIAL_STAFF);
@@ -266,13 +269,14 @@ export const initializeDatabase = (force = false): void => {
         logId: 'log-init',
         userId: 'usr-admin',
         username: 'admin',
-        role: 'admin',
+        role: 'Admin',
         action: 'System Initialized and Seed Data Inserted',
         affectedTable: 'System',
         affectedRecordId: 'all',
         timestamp: new Date().toISOString()
       }
     ]);
+    localStorage.setItem(versionKey, 'true');
   }
 };
 
@@ -479,12 +483,15 @@ export const db = {
     const users = readTable<UserAccount>('UserAccount');
     const doctorUsername = doctorData.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
     const newDocUser: UserAccount = {
+      id: users.length + 1,
       userId: `usr-${doctorId}`,
       username: doctorUsername,
+      email: `${doctorUsername}@subhancare.pk`,
       passwordHash: 'doctor123', // Default password
-      role: 'doctor',
-      linkedEntityId: doctorId,
-      status: 'active',
+      role: 'Doctor',
+      entityType: 'Doctor',
+      entityId: doctorId,
+      is_active: true,
       failedAttempts: 0
     };
     users.push(newDocUser);
@@ -516,9 +523,9 @@ export const db = {
 
     // Lock corresponding user account
     const users = readTable<UserAccount>('UserAccount');
-    const uIndex = users.findIndex(u => u.linkedEntityId === doctorId && u.role === 'doctor');
+    const uIndex = users.findIndex(u => u.entityId === doctorId && u.role === 'Doctor');
     if (uIndex !== -1) {
-      users[uIndex].status = 'inactive';
+      users[uIndex].is_active = false;
       writeTable<UserAccount>('UserAccount', users);
     }
 
@@ -545,13 +552,26 @@ export const db = {
     // Create account for staff
     const users = readTable<UserAccount>('UserAccount');
     const staffUsername = staffData.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
+    const roleMapping: Record<string, UserRole> = {
+      receptionist: 'Receptionist',
+      pharmacist: 'Pharmacist',
+      billing: 'Billing Staff',
+      Receptionist: 'Receptionist',
+      Pharmacist: 'Pharmacist',
+      'Billing Staff': 'Billing Staff'
+    };
+    const userRole = roleMapping[staffData.role] || 'Receptionist';
+
     const newStaffUser: UserAccount = {
+      id: users.length + 1,
       userId: `usr-${staffId}`,
       username: staffUsername,
-      passwordHash: `${staffData.role}123`, // Default e.g. receptionist123
-      role: staffData.role,
-      linkedEntityId: staffId,
-      status: 'active',
+      email: `${staffUsername}@subhancare.pk`,
+      passwordHash: `${staffUsername}123`,
+      role: userRole,
+      entityType: 'Staff',
+      entityId: staffId,
+      is_active: true,
       failedAttempts: 0
     };
     users.push(newStaffUser);
@@ -570,9 +590,9 @@ export const db = {
     writeTable<Staff>('Staff', staff);
 
     const users = readTable<UserAccount>('UserAccount');
-    const uIndex = users.findIndex(u => u.linkedEntityId === staffId);
+    const uIndex = users.findIndex(u => u.entityId === staffId);
     if (uIndex !== -1) {
-      users[uIndex].status = 'inactive';
+      users[uIndex].is_active = false;
       writeTable<UserAccount>('UserAccount', users);
     }
 
