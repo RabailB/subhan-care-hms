@@ -72,15 +72,15 @@ const RootRedirect: React.FC = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   switch (user.role) {
-    case 'admin':
+    case 'Admin':
       return <Navigate to="/dashboard" replace />;
-    case 'doctor':
+    case 'Doctor':
       return <Navigate to="/schedules" replace />;
-    case 'receptionist':
+    case 'Receptionist':
       return <Navigate to="/registration" replace />;
-    case 'pharmacist':
+    case 'Pharmacist':
       return <Navigate to="/prescriptions" replace />;
-    case 'billing':
+    case 'Billing Staff':
       return <Navigate to="/billing" replace />;
     default:
       return <Navigate to="/profile" replace />;
@@ -140,7 +140,7 @@ export const App: React.FC = () => {
 
             {/* Protected Dashboard Routes (Vite React Router v6) */}
             <Route path="/dashboard" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['Admin']}>
                 <DashboardLayoutWrapper activeId="overview">
                   <AdminDashboard />
                 </DashboardLayoutWrapper>
@@ -148,7 +148,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/patients" element={
-              <ProtectedRoute allowedRoles={['admin', 'receptionist', 'doctor']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Receptionist', 'Doctor']}>
                 <DashboardLayoutWrapper activeId="patients">
                   <SprintPlaceholder title="Patient Management List" />
                 </DashboardLayoutWrapper>
@@ -156,7 +156,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/registration" element={
-              <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Receptionist']}>
                 <DashboardLayoutWrapper activeId="registration">
                   <ReceptionistDashboard />
                 </DashboardLayoutWrapper>
@@ -164,7 +164,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/schedules" element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['Doctor']}>
                 <DashboardLayoutWrapper activeId="schedules">
                   <DoctorDashboard />
                 </DashboardLayoutWrapper>
@@ -172,7 +172,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/appointments" element={
-              <ProtectedRoute allowedRoles={['admin', 'receptionist']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Receptionist']}>
                 <DashboardLayoutWrapper activeId="appointments">
                   <SprintPlaceholder title="Appointments List" />
                 </DashboardLayoutWrapper>
@@ -180,7 +180,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/prescriptions" element={
-              <ProtectedRoute allowedRoles={['pharmacist']}>
+              <ProtectedRoute allowedRoles={['Pharmacist']}>
                 <DashboardLayoutWrapper activeId="prescriptions">
                   <PharmacistDashboard />
                 </DashboardLayoutWrapper>
@@ -188,7 +188,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/inventory" element={
-              <ProtectedRoute allowedRoles={['admin', 'pharmacist']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Pharmacist']}>
                 <DashboardLayoutWrapper activeId="inventory">
                   <SprintPlaceholder title="Inventory List" />
                 </DashboardLayoutWrapper>
@@ -196,7 +196,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/billing" element={
-              <ProtectedRoute allowedRoles={['admin', 'billing']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
                 <DashboardLayoutWrapper activeId="billing">
                   <BillingDashboard />
                 </DashboardLayoutWrapper>
@@ -204,7 +204,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/reports" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['Admin']}>
                 <DashboardLayoutWrapper activeId="reports">
                   <SprintPlaceholder title="Reporting Analytics" />
                 </DashboardLayoutWrapper>
@@ -212,7 +212,7 @@ export const App: React.FC = () => {
             } />
 
             <Route path="/profile" element={
-              <ProtectedRoute allowedRoles={['admin', 'doctor', 'receptionist', 'pharmacist', 'billing']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Doctor', 'Receptionist', 'Pharmacist', 'Billing Staff']}>
                 <DashboardLayoutWrapper activeId="profile">
                   <div style={{ textAlign: 'center', padding: '40px 0' }}>
                     <h3>User Profile View</h3>
