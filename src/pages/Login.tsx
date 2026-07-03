@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Input } from '../components/Input';
+import { Button } from '../components/Button';
+import { Building, ShieldAlert, LogIn, Sparkles } from 'lucide-react';
+
+interface LoginProps {
+  onForgotPassword: () => void;
+}
+
+export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
+  const { login } = useAuth();
+  
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!username || !password) {
+      setError('Please enter both username and password.');
+      return;
+    }
+
+    setLoading(true);
+
+    // Simulate database lookup/hashing delay
+    setTimeout(() => {
+      const res = login(username, password);
+      setLoading(false);
+      if (!res.success) {
+        setError(res.error || 'Authentication failed.');
+      } else {
+        // Handle remember me preference
+        if (rememberMe) {
+          localStorage.setItem('subhancare_remembered_user', username);
+        } else {
+          localStorage.removeItem('subhancare_remembered_user');
+        }
+      }
+    }, 1200);
+  };
+
+  // Pre-fill remembered username if exists
+  React.useEffect(() => {
+    const remembered = localStorage.getItem('subhancare_remembered_user');
+    if (remembered) {
+      setUsername(remembered);
+      setRememberMe(true);
+    }
+  }, []);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f8fafc',
+      padding: '16px',
+      backgroundImage: 'radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0, transparent 50%)'
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '440px' }}>
+        
+        {/* Main login card */}
+        <div className="hms-card animate-slide-up" style={{ padding: '36px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)', border: '1px solid #e2e8f0' }}>
+          
+          {/* Logo Header */}
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div className="flex-center" style={{ width: '56px', height: '56px', borderRadius: '12px', backgroundColor: '#2563eb', color: '#ffffff', margin: '0 auto 16px', boxShadow: '0 8px 16px rgba(37, 99, 235, 0.2)' }}>
+              <Building size={28} />
+            </div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a' }}>SUBHAN CARE</h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>Hospital Management System</p>
+          </div>
+
+          {error && (
+            <div style={{ 
+              backgroundColor: '#fef2f2', 
+              border: '1px solid #fca5a5', 
+              color: '#ef4444', 
+              padding: '12px', 
+              borderRadius: '8px', 
+              fontSize: '0.85rem', 
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px'
+            }}>
+              <ShieldAlert size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Username"
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            {/* Remember Me & Forgot Password links */}
+            <div className="flex-between" style={{ marginBottom: '24px' }}>
+              <label className="flex-center" style={{ gap: '8px', fontSize: '0.85rem', color: '#475569', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span>Remember Me</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={onForgotPassword}
+                style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 500, cursor: 'pointer' }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+
+            <Button type="submit" loading={loading} style={{ width: '100%' }} icon={<LogIn size={16} />}>
+              Sign In to Dashboard
+            </Button>
+          </form>
+        </div>
+
+        {/* Demo credentials list for evaluation ease */}
+        <div className="hms-card animate-slide-up" style={{ padding: '16px 20px', border: '1px dashed #cbd5e1', backgroundColor: '#f8fafc' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#2563eb' }}>
+            <Sparkles size={14} />
+            <h4 style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evaluation Accounts Checklist</h4>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '0.75rem', color: '#475569' }}>
+            <div><strong>Administrator:</strong><br />user: <code>admin</code><br />pass: <code>admin123</code></div>
+            <div><strong>Doctor:</strong><br />user: <code>doctor</code><br />pass: <code>doctor123</code></div>
+            <div><strong>Receptionist:</strong><br />user: <code>receptionist</code><br />pass: <code>recept123</code></div>
+            <div><strong>Pharmacist:</strong><br />user: <code>pharmacist</code><br />pass: <code>pharma123</code></div>
+            <div><strong>Billing Staff:</strong><br />user: <code>billing</code><br />pass: <code>billing123</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default Login;
