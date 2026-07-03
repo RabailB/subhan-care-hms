@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'outline';
   loading?: boolean;
   icon?: React.ReactNode;
 }
@@ -21,6 +21,10 @@ export const Button: React.FC<ButtonProps> = ({
         return 'hms-btn-secondary';
       case 'danger':
         return 'hms-btn-danger';
+      case 'success':
+        return 'hms-btn-success';
+      case 'ghost':
+        return 'hms-btn-ghost';
       case 'outline':
         return 'hms-btn-outline';
       default:
@@ -48,4 +52,5 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
 export default Button;
