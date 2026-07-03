@@ -184,7 +184,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               fontWeight: 500,
               display: 'flex',
               alignItems: 'center',
-              justify-content: 'center',
+              justifyContent: 'center',
               gap: '8px',
               cursor: 'pointer',
               transition: 'all 0.2s'
