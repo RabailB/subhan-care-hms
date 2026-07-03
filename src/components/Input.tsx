@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -17,7 +17,8 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const inputId = id || `hms-input-${Math.random().toString(36).substr(2, 9)}`;
+  const reactId = useId();
+  const inputId = id || reactId;
 
   const isPassword = type === 'password';
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
@@ -79,4 +80,5 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
+
 export default Input;
