@@ -373,17 +373,19 @@ export const db = {
     const user = users[userIndex];
     // Check if linked entity contact matches
     let contactValid = false;
+    const cleanNum = (num: string) => num.replace(/[^0-9]/g, '');
+    const cleanContactInput = cleanNum(contactNum);
 
-    if (user.role === 'admin') {
+    if (user.role === 'Admin') {
       contactValid = true; // Special mock exception for administrative reset
-    } else if (user.role === 'doctor') {
+    } else if (user.role === 'Doctor') {
       const doctors = readTable<Doctor>('Doctor');
-      const doc = doctors.find(d => d.doctorId === user.linkedEntityId);
-      if (doc && doc.contactInfo.includes(contactNum)) contactValid = true;
+      const doc = doctors.find(d => d.doctorId === user.entityId);
+      if (doc && (cleanNum(doc.contactInfo).includes(cleanContactInput) || cleanContactInput.includes(cleanNum(doc.contactInfo)))) contactValid = true;
     } else {
       const staff = readTable<Staff>('Staff');
-      const st = staff.find(s => s.staffId === user.linkedEntityId);
-      if (st && st.contactInfo.includes(contactNum)) contactValid = true;
+      const st = staff.find(s => s.staffId === user.entityId);
+      if (st && (cleanNum(st.contactInfo).includes(cleanContactInput) || cleanContactInput.includes(cleanNum(st.contactInfo)))) contactValid = true;
     }
 
     if (!contactValid) {
