@@ -14,10 +14,6 @@ type Step = 'request' | 'otp' | 'reset' | 'success';
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
   const { resetPassword, user } = useAuth();
   
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-  
   const [step, setStep] = useState<Step>('request');
   const [username, setUsername] = useState('');
   const [contactNumber, setContactNumber] = useState('');
@@ -29,6 +25,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin })
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   // Step 1: Submit email & contact to generate OTP
   const handleRequestOtp = (e: React.FormEvent) => {

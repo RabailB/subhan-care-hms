@@ -18,11 +18,6 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // If user is already logged in, redirect them to the home page (which routes them to their dashboard)
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -59,6 +54,11 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
       setRememberMe(true);
     }
   }, []);
+
+  // If user is already logged in, redirect them to the home page (which routes them to their dashboard)
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{
