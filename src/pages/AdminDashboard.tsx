@@ -33,11 +33,11 @@ export const AdminDashboard: React.FC = () => {
   const totalPatients = patients.length;
   const totalDoctors = doctors.length;
   const totalStaff = staff.length;
-  const lowStockCount = inventory.filter(item => item.quantityInStock <= item.reorderThreshold).length;
+  const lowStockCount = inventory.filter(item => item.quantity_in_stock <= item.reorder_threshold).length;
   
   const totalRevenue = invoices
-    .filter(inv => inv.status === 'Paid' || inv.status === 'Partially Paid')
-    .reduce((sum, inv) => sum + inv.amountPaid, 0);
+    .filter(inv => inv.payment_status === 'Paid' || inv.payment_status === 'Partially Paid')
+    .reduce((sum, inv) => sum + inv.amount_paid, 0);
 
   const handleAddStaffSubmit = (e: React.FormEvent) => {
     e.preventDefault();

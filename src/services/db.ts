@@ -198,38 +198,47 @@ const INITIAL_SUPPLIERS: Supplier[] = [
 
 const INITIAL_PATIENTS: Patient[] = [
   {
+    id: 1,
     patientId: 'SC-PAT-00001',
-    name: 'Muhammad Ali',
-    dob: '1985-05-12',
+    patient_code: 'SC-PAT-00001',
+    full_name: 'Muhammad Ali',
+    date_of_birth: '1985-05-12',
     gender: 'Male',
     cnic: '42101-1234567-1',
-    contact: '+92 300 7654321',
+    contact_number: '+92 300 7654321',
     address: 'Flat 12-B, Gulshan-e-Iqbal, Karachi',
-    emergencyContact: '+92 321 1122334',
-    emergencyContactRelationship: 'Brother',
-    bloodGroup: 'B+',
-    allergies: 'Penicillin',
-    maritalStatus: 'Married',
-    occupation: 'Software Engineer',
+    emergency_contact_name: 'Imran Ali',
+    emergency_contact_phone: '+92 321 1122334',
+    emergency_contact_relation: 'Brother',
+    blood_group: 'B+',
+    status: 'Active',
+    is_active: true,
     registrationDate: '2026-06-01T10:00:00Z',
-    status: 'active'
+    allergies: [
+      {
+        allergen_name: 'Penicillin',
+        allergy_type: 'Medication',
+        severity: 'Severe'
+      }
+    ]
   },
   {
+    id: 2,
     patientId: 'SC-PAT-00002',
-    name: 'Fatima Zahra',
-    dob: '1992-09-24',
+    patient_code: 'SC-PAT-00002',
+    full_name: 'Fatima Zahra',
+    date_of_birth: '1992-09-24',
     gender: 'Female',
     cnic: '42201-9876543-2',
-    contact: '+92 333 9988776',
+    contact_number: '+92 333 9988776',
     address: 'House 41, Defence Phase 5, Karachi',
-    emergencyContact: '+92 300 9988776',
-    emergencyContactRelationship: 'Husband',
-    bloodGroup: 'O+',
-    allergies: 'None',
-    maritalStatus: 'Married',
-    occupation: 'Teacher',
-    registrationDate: '2026-06-15T11:30:00Z',
-    status: 'active'
+    emergency_contact_name: 'Zahid Hussain',
+    emergency_contact_phone: '+92 300 9988776',
+    emergency_contact_relation: 'Husband',
+    blood_group: 'O+',
+    status: 'Active',
+    is_active: true,
+    registrationDate: '2026-06-15T11:30:00Z'
   }
 ];
 
@@ -403,25 +412,37 @@ export const db = {
   },
 
   // Patients
-  getPatients: (): Patient[] => readTable<Patient>('Patient').filter(p => p.status === 'active'),
+  getPatients: (): Patient[] => readTable<Patient>('Patient').filter(p => p.is_active),
   
-  registerPatient: (patientData: Omit<Patient, 'patientId' | 'registrationDate' | 'status'>, operator: { userId: string; username: string; role: string }): { success: boolean; patient?: Patient; error?: string } => {
+  registerPatient: (patientData: Omit<Patient, 'id' | 'patientId' | 'patient_code' | 'registrationDate' | 'status' | 'is_active'>, operator: { userId: string; username: string; role: string }): { success: boolean; patient?: Patient; error?: string } => {
     const patients = readTable<Patient>('Patient');
 
     // FR-01.6 Prevent duplicate patient registration by validating CNIC
-    const duplicate = patients.find(p => p.cnic === patientData.cnic && p.status === 'active');
+    const duplicate = patients.find(p => p.cnic === patientData.cnic && p.is_active);
     if (duplicate) {
-      return { success: false, error: `Patient with CNIC ${patientData.cnic} is already registered (Patient ID: ${duplicate.patientId}).` };
+      return { success: false, error: `Patient with CNIC ${patientData.cnic} is already registered (Patient ID: ${duplicate.patient_code}).` };
     }
 
     const count = patients.length + 1;
     const patientId = `SC-PAT-${String(count).padStart(5, '0')}`;
     
     const newPatient: Patient = {
-      ...patientData,
+      id: count,
       patientId,
+      patient_code: patientId,
+      full_name: patientData.full_name,
+      date_of_birth: patientData.date_of_birth,
+      gender: patientData.gender,
+      cnic: patientData.cnic,
+      contact_number: patientData.contact_number,
+      address: patientData.address,
+      blood_group: patientData.blood_group || 'Unknown',
+      emergency_contact_name: patientData.emergency_contact_name,
+      emergency_contact_phone: patientData.emergency_contact_phone,
+      emergency_contact_relation: patientData.emergency_contact_relation,
       registrationDate: new Date().toISOString(),
-      status: 'active'
+      status: 'Active',
+      is_active: true
     };
 
     patients.push(newPatient);
@@ -433,13 +454,13 @@ export const db = {
 
   updatePatient: (patientId: string, updatedData: Partial<Patient>, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
     const patients = readTable<Patient>('Patient');
-    const index = patients.findIndex(p => p.patientId === patientId && p.status === 'active');
+    const index = patients.findIndex(p => p.patientId === patientId && p.is_active);
 
     if (index === -1) return { success: false, error: 'Patient not found.' };
 
     // Prevent cnic duplicates on update
     if (updatedData.cnic && updatedData.cnic !== patients[index].cnic) {
-      const duplicate = patients.find(p => p.cnic === updatedData.cnic && p.patientId !== patientId && p.status === 'active');
+      const duplicate = patients.find(p => p.cnic === updatedData.cnic && p.patientId !== patientId && p.is_active);
       if (duplicate) {
         return { success: false, error: `CNIC ${updatedData.cnic} is already registered to another patient.` };
       }
@@ -452,16 +473,61 @@ export const db = {
     return { success: true };
   },
 
-  deactivatePatient: (patientId: string, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+  deactivatePatient: (patientId: string, operator: { userId: string; username: string; role: string }): { success: boolean } => {
     const patients = readTable<Patient>('Patient');
     const index = patients.findIndex(p => p.patientId === patientId);
 
-    if (index === -1) return { success: false, error: 'Patient not found.' };
+    if (index === -1) return { success: false };
 
-    patients[index].status = 'inactive';
+    patients[index].is_active = false;
+    patients[index].status = 'Inactive';
     writeTable<Patient>('Patient', patients);
 
     logActivity(operator.userId, operator.username, operator.role, `Soft Deleted/Deactivated Patient (${patientId})`, 'Patient', patientId);
+    return { success: true };
+  },
+
+  addPatientAllergy: (patientId: string, allergyData: { allergen_name: string; allergy_type: 'Medication' | 'Food' | 'Environmental'; severity: 'Mild' | 'Moderate' | 'Severe' }, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+    const patients = readTable<Patient>('Patient');
+    const index = patients.findIndex(p => p.patientId === patientId && p.is_active);
+    if (index === -1) return { success: false, error: 'Patient not found.' };
+
+    const patient = patients[index];
+    if (!patient.allergies) patient.allergies = [];
+
+    // Check if allergen already exists
+    const duplicate = patient.allergies.find(a => a.allergen_name.toLowerCase() === allergyData.allergen_name.toLowerCase());
+    if (duplicate) {
+      return { success: false, error: `Allergen '${allergyData.allergen_name}' is already recorded.` };
+    }
+
+    patient.allergies.push(allergyData);
+    patients[index] = patient;
+    writeTable<Patient>('Patient', patients);
+
+    logActivity(operator.userId, operator.username, operator.role, `Added Patient Allergy (${allergyData.allergen_name}) to ${patientId}`, 'Patient', patientId);
+    return { success: true };
+  },
+
+  deletePatientAllergy: (patientId: string, allergenName: string, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+    const patients = readTable<Patient>('Patient');
+    const index = patients.findIndex(p => p.patientId === patientId && p.is_active);
+    if (index === -1) return { success: false, error: 'Patient not found.' };
+
+    const patient = patients[index];
+    if (!patient.allergies) return { success: false, error: 'Allergy not found.' };
+
+    const initialLength = patient.allergies.length;
+    patient.allergies = patient.allergies.filter(a => a.allergen_name.toLowerCase() !== allergenName.toLowerCase());
+
+    if (patient.allergies.length === initialLength) {
+      return { success: false, error: 'Allergy not found.' };
+    }
+
+    patients[index] = patient;
+    writeTable<Patient>('Patient', patients);
+
+    logActivity(operator.userId, operator.username, operator.role, `Deleted Patient Allergy (${allergenName}) from ${patientId}`, 'Patient', patientId);
     return { success: true };
   },
 
@@ -605,26 +671,45 @@ export const db = {
   // Appointments
   getAppointments: (): Appointment[] => readTable<Appointment>('Appointment'),
   
-  bookAppointment: (aptData: Omit<Appointment, 'appointmentId' | 'status'>, operator: { userId: string; username: string; role: string }): { success: boolean; appointment?: Appointment; error?: string } => {
+  bookAppointment: (aptData: Omit<Appointment, 'id' | 'appointmentId' | 'status' | 'created_at'>, operator: { userId: string; username: string; role: string }): { success: boolean; appointment?: Appointment; error?: string } => {
     const appointments = readTable<Appointment>('Appointment');
 
     // IR-05: The system shall not allow the same doctor to be booked for two overlapping appointment slots
     const conflict = appointments.find(
       a => a.doctorId === aptData.doctorId &&
-           a.date === aptData.date &&
-           a.timeSlot === aptData.timeSlot &&
-           a.status !== 'Cancelled'
+           a.appointment_date === aptData.appointment_date &&
+           a.slot_start_time === aptData.slot_start_time &&
+           a.status === 'Scheduled'
     );
 
     if (conflict) {
       return { success: false, error: 'Doctor has an overlapping appointment at this slot. Select another time.' };
     }
 
-    const appointmentId = `SC-APT-${appointments.length + 1}`;
+    const count = appointments.length + 1;
+    const appointmentId = `SC-APT-${String(count).padStart(5, '0')}`;
+    
+    // Auto-calculate slot_end_time (add 30 minutes)
+    const [hours, minutes] = aptData.slot_start_time.split(':').map(Number);
+    let endMin = minutes + 30;
+    let endHr = hours;
+    if (endMin >= 60) {
+      endMin -= 60;
+      endHr += 1;
+    }
+    const slot_end_time = `${String(endHr).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+
     const newApt: Appointment = {
-      ...aptData,
+      id: count,
       appointmentId,
-      status: 'Scheduled'
+      patientId: aptData.patientId,
+      doctorId: aptData.doctorId,
+      appointment_date: aptData.appointment_date,
+      slot_start_time: aptData.slot_start_time,
+      slot_end_time,
+      status: 'Scheduled',
+      booked_by: operator.userId,
+      created_at: new Date().toISOString()
     };
 
     appointments.push(newApt);
@@ -641,7 +726,7 @@ export const db = {
 
     appointments[index].status = status;
     if (status === 'Cancelled') {
-      appointments[index].cancellationReason = reason;
+      appointments[index].cancellation_reason = reason as any;
     }
     writeTable<Appointment>('Appointment', appointments);
 

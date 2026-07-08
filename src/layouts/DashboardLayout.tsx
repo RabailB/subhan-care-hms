@@ -42,10 +42,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'badge-danger';
-      case 'doctor': return 'badge-primary';
-      case 'receptionist': return 'badge-success';
-      case 'pharmacist': return 'badge-warning';
+      case 'Admin': return 'badge-danger';
+      case 'Doctor': return 'badge-primary';
+      case 'Receptionist': return 'badge-success';
+      case 'Pharmacist': return 'badge-warning';
+      case 'Billing Staff': return 'badge-info';
       default: return 'badge-primary';
     }
   };
@@ -57,34 +58,37 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     ];
 
     switch (user.role) {
-      case 'admin':
+      case 'Admin':
         return [
           { id: 'overview', label: 'Overview Dashboard', icon: Activity },
           { id: 'staff', label: 'Staff Configuration', icon: UserCheck },
+          { id: 'doctors', label: 'Clinicians Registry', icon: Calendar },
+          { id: 'patients', label: 'Patient Registry', icon: ClipboardList },
+          { id: 'appointments', label: 'Appointments Calendar', icon: Calendar },
           { id: 'inventory', label: 'Inventory Control', icon: Package },
           { id: 'audit', label: 'System Audit Logs', icon: ShieldAlert },
           { id: 'reports', label: 'Operational Reports', icon: FileText },
           ...common
         ];
-      case 'doctor':
+      case 'Doctor':
         return [
           { id: 'schedules', label: 'My Appointments', icon: Calendar },
           { id: 'patients', label: 'Patient Medical Records', icon: ClipboardList },
           ...common
         ];
-      case 'receptionist':
+      case 'Receptionist':
         return [
           { id: 'registration', label: 'Patient Registry', icon: UserCheck },
           { id: 'appointments', label: 'Manage Appointments', icon: Calendar },
           ...common
         ];
-      case 'pharmacist':
+      case 'Pharmacist':
         return [
           { id: 'prescriptions', label: 'Prescriptions Queue', icon: FileText },
           { id: 'inventory', label: 'Pharmacy Inventory', icon: Package },
           ...common
         ];
-      case 'billing':
+      case 'Billing Staff':
         return [
           { id: 'billing', label: 'Billing & Invoices', icon: CreditCard },
           { id: 'financials', label: 'Financial Reports', icon: FileText },

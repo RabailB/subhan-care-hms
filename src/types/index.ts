@@ -17,6 +17,12 @@ export interface UserAccount {
   lastLogin?: string;
 }
 
+export interface PatientAllergy {
+  allergen_name: string;
+  allergy_type: 'Medication' | 'Food' | 'Environmental';
+  severity: 'Mild' | 'Moderate' | 'Severe';
+}
+
 export interface Patient {
   id: number;
   patientId: string; // SC-PAT-##### (mapped to patient_code)
@@ -34,6 +40,7 @@ export interface Patient {
   status: 'Active' | 'Inactive' | 'Admitted' | 'Discharged' | 'Deceased';
   is_active: boolean;
   registrationDate: string; // created_at equivalent
+  allergies?: PatientAllergy[];
 }
 
 export interface Doctor {
