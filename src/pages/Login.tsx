@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import { Building, ShieldAlert, LogIn, Sparkles } from 'lucide-react';
+import { Building, ShieldAlert, LogIn } from 'lucide-react';
 
 interface LoginProps {
   onForgotPassword: () => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -54,6 +55,11 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
     }
   }, []);
 
+  // If user is already logged in, redirect them to the home page (which routes them to their dashboard)
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -64,7 +70,7 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
       padding: '16px',
       backgroundImage: 'radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0, transparent 50%)'
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '440px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '420px' }}>
         
         {/* Main login card */}
         <div className="hms-card animate-slide-up" style={{ padding: '36px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)', border: '1px solid #e2e8f0' }}>
@@ -148,20 +154,6 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
           </form>
         </div>
 
-        {/* Demo credentials list for evaluation ease */}
-        <div className="hms-card animate-slide-up" style={{ padding: '16px 20px', border: '1px dashed #cbd5e1', backgroundColor: '#f8fafc' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#2563eb' }}>
-            <Sparkles size={14} />
-            <h4 style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evaluation Accounts Checklist</h4>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '0.75rem', color: '#475569' }}>
-            <div><strong>Administrator:</strong><br />user: <code>admin</code><br />pass: <code>admin123</code></div>
-            <div><strong>Doctor:</strong><br />user: <code>doctor</code><br />pass: <code>doctor123</code></div>
-            <div><strong>Receptionist:</strong><br />user: <code>receptionist</code><br />pass: <code>recept123</code></div>
-            <div><strong>Pharmacist:</strong><br />user: <code>pharmacist</code><br />pass: <code>pharma123</code></div>
-            <div><strong>Billing Staff:</strong><br />user: <code>billing</code><br />pass: <code>billing123</code></div>
-          </div>
-        </div>
       </div>
     </div>
   );

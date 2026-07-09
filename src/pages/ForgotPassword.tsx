@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
@@ -11,7 +12,7 @@ interface ForgotPasswordProps {
 type Step = 'request' | 'otp' | 'reset' | 'success';
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
-  const { resetPassword } = useAuth();
+  const { resetPassword, user } = useAuth();
   
   const [step, setStep] = useState<Step>('request');
   const [username, setUsername] = useState('');
@@ -24,6 +25,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin })
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   // Step 1: Submit email & contact to generate OTP
   const handleRequestOtp = (e: React.FormEvent) => {
