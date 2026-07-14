@@ -20,8 +20,16 @@ import { BookAppointmentPage } from './pages/BookAppointmentPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { ReceptionistDashboard } from './pages/ReceptionistDashboard';
-import { PharmacistDashboard } from './pages/PharmacistDashboard';
-import { BillingDashboard } from './pages/BillingDashboard';
+import { ConsultationFormPage } from './pages/ConsultationFormPage';
+
+// Pharmacy Module
+import { InventoryListPage } from './pages/InventoryListPage';
+import { PrescriptionQueuePage } from './pages/PrescriptionQueuePage';
+
+// Billing Module
+import { InvoiceListPage } from './pages/InvoiceListPage';
+import { CreateInvoicePage } from './pages/CreateInvoicePage';
+import { InvoicePrintView } from './pages/InvoicePrintView';
 
 // Shared Components
 import { Card } from './components/Card';
@@ -147,6 +155,13 @@ export const App: React.FC = () => {
             {/* Root handler */}
             <Route path="/" element={<RootRedirect />} />
 
+            {/* Print Views (No layout wrapper) */}
+            <Route path="/invoice/print/:invoiceId" element={
+              <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
+                <InvoicePrintView />
+              </ProtectedRoute>
+            } />
+
             {/* Protected Dashboard Routes (Vite React Router v6) */}
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={['Admin']}>
@@ -212,6 +227,14 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             } />
 
+            <Route path="/consultation/:appointmentId" element={
+              <ProtectedRoute allowedRoles={['Doctor']}>
+                <DashboardLayoutWrapper activeId="schedules">
+                  <ConsultationFormPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
             <Route path="/appointments" element={
               <ProtectedRoute allowedRoles={['Admin', 'Receptionist']}>
                 <DashboardLayoutWrapper activeId="appointments">
@@ -231,7 +254,7 @@ export const App: React.FC = () => {
             <Route path="/prescriptions" element={
               <ProtectedRoute allowedRoles={['Pharmacist']}>
                 <DashboardLayoutWrapper activeId="prescriptions">
-                  <PharmacistDashboard />
+                  <PrescriptionQueuePage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />
@@ -239,7 +262,7 @@ export const App: React.FC = () => {
             <Route path="/inventory" element={
               <ProtectedRoute allowedRoles={['Admin', 'Pharmacist']}>
                 <DashboardLayoutWrapper activeId="inventory">
-                  <SprintPlaceholder title="Inventory List" />
+                  <InventoryListPage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />
@@ -247,7 +270,15 @@ export const App: React.FC = () => {
             <Route path="/billing" element={
               <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
                 <DashboardLayoutWrapper activeId="billing">
-                  <BillingDashboard />
+                  <InvoiceListPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/billing/new" element={
+              <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
+                <DashboardLayoutWrapper activeId="billing">
+                  <CreateInvoicePage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />

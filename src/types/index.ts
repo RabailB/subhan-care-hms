@@ -124,6 +124,7 @@ export interface Prescription {
   patientId: string;
   doctorId: string;
   medicines: PrescriptionMedicine[];
+  is_dispensed?: boolean;
   timestamp: string;
 }
 
