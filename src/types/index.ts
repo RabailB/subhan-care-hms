@@ -195,3 +195,11 @@ export interface AuditLog {
   action: string; // descriptive log message
   timestamp: string;
 }
+
+export interface SystemSettings {
+  hospital_name: string;
+  hospital_address: string;
+  hospital_phone: string;
+  default_tax_rate: number;
+  default_consultation_fee: number;
+}

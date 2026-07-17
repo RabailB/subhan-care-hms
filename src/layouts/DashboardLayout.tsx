@@ -14,7 +14,8 @@ import {
   UserCheck,
   Building,
   Menu,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -68,6 +69,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           { id: 'inventory', label: 'Inventory Control', icon: Package },
           { id: 'audit', label: 'System Audit Logs', icon: ShieldAlert },
           { id: 'reports', label: 'Operational Reports', icon: FileText },
+          { id: 'settings', label: 'System Settings', icon: Settings },
           ...common
         ];
       case 'Doctor':

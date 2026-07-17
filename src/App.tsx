@@ -18,6 +18,9 @@ import { BookAppointmentPage } from './pages/BookAppointmentPage';
 
 // Role Dashboards
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuditLogsPage } from './pages/AuditLogsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { ReceptionistDashboard } from './pages/ReceptionistDashboard';
 import { ConsultationFormPage } from './pages/ConsultationFormPage';
@@ -118,8 +121,9 @@ const DashboardLayoutWrapper: React.FC<{ activeId: string; children: React.React
       staff: '/dashboard',
       doctors: '/doctors',
       inventory: '/inventory',
-      audit: '/dashboard',
+      audit: '/audit-logs',
       reports: '/reports',
+      settings: '/settings',
       profile: '/profile',
       schedules: '/schedules',
       patients: '/patients',
@@ -286,7 +290,23 @@ export const App: React.FC = () => {
             <Route path="/reports" element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <DashboardLayoutWrapper activeId="reports">
-                  <SprintPlaceholder title="Reporting Analytics" />
+                  <ReportsPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/audit-logs" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <DashboardLayoutWrapper activeId="audit">
+                  <AuditLogsPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/settings" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <DashboardLayoutWrapper activeId="settings">
+                  <SettingsPage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />

@@ -10,7 +10,8 @@ import {
   Supplier, 
   AuditLog, 
   UserAccount,
-  UserRole
+  UserRole,
+  SystemSettings
 } from '../types';
 
 // Constants
@@ -294,6 +295,13 @@ export const initializeDatabase = (force = false): void => {
         timestamp: new Date().toISOString()
       }
     ]);
+    writeTable<SystemSettings>('SystemSettings', [{
+      hospital_name: 'Subhan Care Hospital',
+      hospital_address: '123 Main Street, Healthcare District',
+      hospital_phone: '+92 300 1234567',
+      default_tax_rate: 5,
+      default_consultation_fee: 1000
+    }]);
     localStorage.setItem(versionKey, 'true');
   }
 };
@@ -1077,5 +1085,17 @@ export const db = {
 
     logActivity(operator.userId, operator.username, operator.role, `Added Supplier Partner (${supplierId})`, 'Supplier', supplierId);
     return newSup;
+  },
+
+  // System Settings
+  getSystemSettings: (): SystemSettings => {
+    const settings = readTable<SystemSettings>('SystemSettings');
+    return settings[0];
+  },
+  
+  updateSystemSettings: (newSettings: SystemSettings, operator: { userId: string; username: string; role: string }): { success: boolean } => {
+    writeTable<SystemSettings>('SystemSettings', [newSettings]);
+    logActivity(operator.userId, operator.username, operator.role, 'Updated System Global Settings', 'SystemSettings', 'settings');
+    return { success: true };
   }
 };
