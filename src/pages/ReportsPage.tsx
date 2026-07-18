@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useDatabase } from '../context/DatabaseContext';
 import { Card } from '../components/Card';
-import { TrendingUp, Users, DollarSign, Package } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Package, Printer } from 'lucide-react';
+import { Button } from '../components/Button';
 
 export const ReportsPage: React.FC = () => {
   const { invoices, patients, inventory } = useDatabase();
@@ -72,7 +73,7 @@ export const ReportsPage: React.FC = () => {
           </div>
         </div>
         
-        <div>
+        <div style={{ display: 'flex', gap: '12px' }}>
           <select 
             className="form-input" 
             value={dateRange} 
@@ -84,6 +85,13 @@ export const ReportsPage: React.FC = () => {
             <option value="month">This Month</option>
             <option value="all">All Time</option>
           </select>
+          <Button 
+            variant="outline" 
+            onClick={() => window.print()}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Printer size={16} /> Print / Export PDF
+          </Button>
         </div>
       </div>
 

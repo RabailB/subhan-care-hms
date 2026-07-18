@@ -15,6 +15,7 @@ export const PrescriptionQueuePage: React.FC = () => {
   
   const [dispenseModalOpen, setDispenseModalOpen] = useState(false);
   const [selectedRx, setSelectedRx] = useState<Prescription | null>(null);
+  const [dispenseQuantities, setDispenseQuantities] = useState<Record<number, number>>({});
 
   useEffect(() => {
     loadData();
@@ -29,14 +30,23 @@ export const PrescriptionQueuePage: React.FC = () => {
   const handleDispense = () => {
     if (!selectedRx) return;
 
-    // Optional: Deduct from inventory
-    const itemsToDeduct = selectedRx.medicines.map(m => {
-      // Very naive extraction of quantity: if dosage is "1-0-1", assume 2 per day * 5 days = 10
-      // For this system, we'll ask user to manually deduct from Inventory page or just warn if not found
-      return { name: m.name, quantity: 1 }; // Placeholder logic
-    });
+    const itemsToDeduct = selectedRx.medicines.map((m, idx) => ({
+      name: m.name,
+      quantity: dispenseQuantities[idx] || 1
+    }));
     
-    // We skip hard deduction here to avoid complex dosage parsing, just mark as dispensed
+    // Deduct stock first
+    const dispRes = db.dispenseMedicines(itemsToDeduct, {
+      userId: user!.userId,
+      username: user!.username,
+      role: user!.role
+    });
+
+    if (!dispRes.success) {
+      alert(dispRes.error);
+      return;
+    }
+
     const res = db.markPrescriptionDispensed(selectedRx.prescriptionId, {
       userId: user!.userId,
       username: user!.username,
@@ -137,7 +147,13 @@ export const PrescriptionQueuePage: React.FC = () => {
                 <Button 
                   variant="primary" 
                   style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '6px' }}
-                  onClick={() => { setSelectedRx(rx); setDispenseModalOpen(true); }}
+                  onClick={() => { 
+                    setSelectedRx(rx); 
+                    const initialQty: Record<number, number> = {};
+                    rx.medicines.forEach((_, idx) => initialQty[idx] = 1);
+                    setDispenseQuantities(initialQty);
+                    setDispenseModalOpen(true); 
+                  }}
                 >
                   <CheckCircle size={16} /> Mark as Dispensed
                 </Button>
@@ -156,8 +172,33 @@ export const PrescriptionQueuePage: React.FC = () => {
         onPrimaryAction={handleDispense}
       >
         <p>Are you sure you want to mark <strong>{selectedRx?.prescriptionId}</strong> as dispensed?</p>
+        
+        {selectedRx && selectedRx.medicines.length > 0 && (
+          <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+            <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px' }}>Inventory Deduction Quantities:</p>
+            {selectedRx.medicines.map((m, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px' }}>
+                <div style={{ fontSize: '0.85rem' }}>
+                  <strong>{m.name}</strong><br/>
+                  <span style={{ color: '#64748b' }}>{m.dosage} ({m.duration})</span>
+                </div>
+                <div style={{ width: '80px' }}>
+                  <input 
+                    type="number" 
+                    min="1"
+                    className="input-field" 
+                    value={dispenseQuantities[idx] || 1}
+                    onChange={(e) => setDispenseQuantities({...dispenseQuantities, [idx]: Number(e.target.value)})}
+                    style={{ padding: '4px 8px', height: '32px' }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
-          This will log the dispense action under your staff account. Make sure you have handed over the required medicines to the patient.
+          This will deduct the selected quantities from inventory and mark the prescription as complete.
         </p>
       </Modal>
     </div>

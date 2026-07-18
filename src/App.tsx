@@ -152,8 +152,8 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<Login onForgotPassword={() => window.location.pathname = '/forgot-password'} />} />
-            <Route path="/forgot-password" element={<ForgotPassword onBackToLogin={() => window.location.pathname = '/login'} />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Root handler */}

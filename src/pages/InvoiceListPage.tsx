@@ -80,7 +80,7 @@ export const InvoiceListPage: React.FC = () => {
         </div>
         <Button 
           variant="primary" 
-          onClick={() => window.location.pathname = '/billing/new'}
+          onClick={() => navigate('/billing/new')}
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
           <Plus size={16} /> Create Invoice

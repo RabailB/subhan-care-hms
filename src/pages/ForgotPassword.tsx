@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { ShieldCheck, Mail, Key, CheckCircle, ArrowLeft, Send } from 'lucide-react';
 
-interface ForgotPasswordProps {
-  onBackToLogin: () => void;
-}
-
 type Step = 'request' | 'otp' | 'reset' | 'success';
 
-export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
+export const ForgotPassword: React.FC = () => {
   const { resetPassword, user } = useAuth();
+  const navigate = useNavigate();
   
   const [step, setStep] = useState<Step>('request');
   const [username, setUsername] = useState('');
@@ -157,7 +154,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin })
 
             <button
               type="button"
-              onClick={onBackToLogin}
+              onClick={() => navigate('/login')}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -287,7 +284,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin })
               Your account password has been updated successfully. You can now log in using your new credentials.
             </p>
 
-            <Button onClick={onBackToLogin} style={{ width: '100%' }}>
+            <Button onClick={() => navigate('/login')} style={{ width: '100%' }}>
               Sign In Now
             </Button>
           </div>
