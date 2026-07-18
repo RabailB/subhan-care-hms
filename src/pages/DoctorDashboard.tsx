@@ -62,7 +62,7 @@ export const DoctorDashboard: React.FC = () => {
 
       <Card title="Today's Appointments" subtitle="Patients scheduled for consultation">
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
+          <table className="hms-table">
             <thead>
               <tr>
                 <th>Time</th>

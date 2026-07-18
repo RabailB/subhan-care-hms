@@ -296,7 +296,7 @@ export const ConsultationFormPage: React.FC = () => {
           {medicines.length > 0 && (
             <div style={{ marginTop: '20px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#475569' }}>Current Prescription List</h4>
-              <table className="data-table">
+              <table className="hms-table">
                 <thead>
                   <tr>
                     <th>Medicine</th>

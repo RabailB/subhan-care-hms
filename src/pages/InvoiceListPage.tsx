@@ -102,7 +102,7 @@ export const InvoiceListPage: React.FC = () => {
       </div>
 
       <div style={{ overflowX: 'auto' }}>
-        <table className="data-table">
+        <table className="hms-table">
           <thead>
             <tr>
               <th>Invoice #</th>
