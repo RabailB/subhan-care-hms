@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initializeDatabase, db } from '../services/db';
-import { Patient, Doctor, Staff, Appointment, Consultation, Prescription, Invoice, InventoryItem, Supplier, AuditLog } from '../types';
+import { Patient, Doctor, Staff, Appointment, Consultation, Prescription, Invoice, InventoryItem, Supplier, AuditLog, SystemSettings } from '../types';
 
 interface DatabaseContextType {
   patients: Patient[];
@@ -13,6 +13,7 @@ interface DatabaseContextType {
   inventory: InventoryItem[];
   suppliers: Supplier[];
   auditLogs: AuditLog[];
+  systemSettings: SystemSettings | null;
   refreshData: () => void;
   // Expose the database operations
   dbOps: typeof db;
@@ -31,6 +32,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
 
   const loadData = () => {
     setPatients(db.getPatients());
@@ -42,6 +44,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setInvoices(db.getInvoices());
     setInventory(db.getInventory());
     setSuppliers(db.getSuppliers());
+    setSystemSettings(db.getSystemSettings());
     // Use role admin by default for loader, component-level checks will restrict log views
     setAuditLogs(db.getAuditLogs('admin'));
   };
@@ -157,6 +160,11 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = db.createSupplier(...args);
       refreshData();
       return res;
+    },
+    updateSystemSettings: (...args: Parameters<typeof db.updateSystemSettings>) => {
+      const res = db.updateSystemSettings(...args);
+      if (res.success) refreshData();
+      return res;
     }
   };
 
@@ -172,6 +180,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       inventory,
       suppliers,
       auditLogs,
+      systemSettings,
       refreshData,
       dbOps: wrappedDbOps
     }}>

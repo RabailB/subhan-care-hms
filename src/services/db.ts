@@ -10,7 +10,8 @@ import {
   Supplier, 
   AuditLog, 
   UserAccount,
-  UserRole
+  UserRole,
+  SystemSettings
 } from '../types';
 
 // Constants
@@ -142,34 +143,43 @@ const INITIAL_USERS: UserAccount[] = [
 
 const INITIAL_INVENTORY: InventoryItem[] = [
   {
-    itemId: 'item-1',
+    id: 1,
     name: 'Panadol 500mg',
-    batchNumber: 'B-PNDL-101',
-    expiryDate: '2027-12-31',
-    quantityInStock: 250,
-    reorderThreshold: 50,
+    batch_number: 'B-PNDL-101',
+    unit: 'Tablet',
+    unit_cost: 2.5,
+    quantity_in_stock: 250,
+    reorder_threshold: 50,
+    expiry_date: '2027-12-31',
     supplierId: 'sup-1',
-    supplierName: 'Subhan Pharma Distributors'
+    supplierName: 'Subhan Pharma Distributors',
+    is_active: true
   },
   {
-    itemId: 'item-2',
+    id: 2,
     name: 'Amoxil 250mg Suspension',
-    batchNumber: 'B-AMX-204',
-    expiryDate: '2026-11-30',
-    quantityInStock: 80,
-    reorderThreshold: 20,
+    batch_number: 'B-AMX-204',
+    unit: 'Other',
+    unit_cost: 150.0,
+    quantity_in_stock: 80,
+    reorder_threshold: 20,
+    expiry_date: '2026-11-30',
     supplierId: 'sup-1',
-    supplierName: 'Subhan Pharma Distributors'
+    supplierName: 'Subhan Pharma Distributors',
+    is_active: true
   },
   {
-    itemId: 'item-3',
+    id: 3,
     name: 'Surbex-Z Tablets',
-    batchNumber: 'B-SRBX-902',
-    expiryDate: '2026-08-15', // Near expiry
-    quantityInStock: 12,
-    reorderThreshold: 15,
+    batch_number: 'B-SRBX-902',
+    unit: 'Tablet',
+    unit_cost: 12.0,
+    quantity_in_stock: 12,
+    reorder_threshold: 15,
+    expiry_date: '2026-08-15', // Near expiry
     supplierId: 'sup-2',
-    supplierName: 'Ali Allied Supplies'
+    supplierName: 'Ali Allied Supplies',
+    is_active: true
   }
 ];
 
@@ -285,6 +295,13 @@ export const initializeDatabase = (force = false): void => {
         timestamp: new Date().toISOString()
       }
     ]);
+    writeTable<SystemSettings>('SystemSettings', [{
+      hospital_name: 'Subhan Care Hospital',
+      hospital_address: '123 Main Street, Healthcare District',
+      hospital_phone: '+92 300 1234567',
+      default_tax_rate: 5,
+      default_consultation_fee: 1000
+    }]);
     localStorage.setItem(versionKey, 'true');
   }
 };
@@ -744,16 +761,19 @@ export const db = {
     const existing = consultations.find(c => c.appointmentId === appointmentId);
     if (existing) return existing;
 
-    const consultationId = `SC-CNS-${consultations.length + 1}`;
+    const count = consultations.length + 1;
+    const consultationId = `SC-CNS-${String(count).padStart(5, '0')}`;
     const newConsultation: Consultation = {
+      id: count,
       consultationId,
       appointmentId,
       patientId,
       doctorId,
-      consultationDate: new Date().toISOString(),
-      diagnosis: '',
-      notes: '',
-      status: 'draft',
+      chief_complaint: '',
+      diagnosis_description: '',
+      clinical_notes: '',
+      status: 'In Progress',
+      is_finalized: false,
       version: 1,
       history: []
     };
@@ -765,7 +785,19 @@ export const db = {
     return newConsultation;
   },
 
-  saveConsultation: (consultationId: string, diagnosis: string, notes: string, followUpDate?: string, operator: { userId: string; username: string; role: string }): { success: boolean; consultation?: Consultation; error?: string } => {
+  saveConsultation: (
+    consultationId: string, 
+    data: { 
+      chief_complaint?: string; 
+      diagnosis_description?: string; 
+      clinical_notes?: string; 
+      blood_pressure?: string;
+      temperature?: number;
+      weight_kg?: number;
+      is_finalized?: boolean;
+    }, 
+    operator: { userId: string; username: string; role: string }
+  ): { success: boolean; consultation?: Consultation; error?: string } => {
     const consultations = readTable<Consultation>('Consultation');
     const index = consultations.findIndex(c => c.consultationId === consultationId);
 
@@ -774,12 +806,11 @@ export const db = {
     const record = consultations[index];
 
     // FR-06.3: Support immutability on finalized consultation, corrections saved in version log
-    if (record.status === 'completed') {
+    if (record.is_finalized) {
       // Save current content to history log before writing update
       const historyItem = {
-        diagnosis: record.diagnosis,
-        notes: record.notes,
-        followUpDate: record.followUpDate,
+        diagnosis_description: record.diagnosis_description,
+        clinical_notes: record.clinical_notes,
         updatedAt: new Date().toISOString()
       };
       
@@ -787,14 +818,30 @@ export const db = {
       record.version += 1;
     }
 
-    record.diagnosis = diagnosis;
-    record.notes = notes;
-    record.followUpDate = followUpDate || undefined;
-    
-    consultations[index] = record;
+    if (data.chief_complaint !== undefined) record.chief_complaint = data.chief_complaint;
+    if (data.diagnosis_description !== undefined) record.diagnosis_description = data.diagnosis_description;
+    if (data.clinical_notes !== undefined) record.clinical_notes = data.clinical_notes;
+    if (data.blood_pressure !== undefined) record.blood_pressure = data.blood_pressure;
+    if (data.temperature !== undefined) record.temperature = data.temperature;
+    if (data.weight_kg !== undefined) record.weight_kg = data.weight_kg;
+
+    if (data.is_finalized) {
+      record.is_finalized = true;
+      record.status = 'Completed';
+      record.finalized_at = new Date().toISOString();
+      
+      // Auto-update appointment status to Completed
+      const appointments = readTable<Appointment>('Appointment');
+      const aptIndex = appointments.findIndex(a => a.appointmentId === record.appointmentId);
+      if (aptIndex !== -1 && appointments[aptIndex].status !== 'Completed') {
+        appointments[aptIndex].status = 'Completed';
+        writeTable<Appointment>('Appointment', appointments);
+      }
+    }
+
     writeTable<Consultation>('Consultation', consultations);
 
-    logActivity(operator.userId, operator.username, operator.role, `Saved Consultation Data v${record.version} (${consultationId})`, 'Consultation', consultationId);
+    logActivity(operator.userId, operator.username, operator.role, `Saved Consultation Notes (${consultationId})`, 'Consultation', consultationId);
     return { success: true, consultation: record };
   },
 
@@ -834,6 +881,7 @@ export const db = {
     const newRx: Prescription = {
       ...prescriptionData,
       prescriptionId,
+      is_dispensed: false,
       timestamp: new Date().toISOString()
     };
 
@@ -844,33 +892,50 @@ export const db = {
     return { success: true, prescription: newRx };
   },
 
+  markPrescriptionDispensed: (prescriptionId: string, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+    const prescriptions = readTable<Prescription>('Prescription');
+    const index = prescriptions.findIndex(p => p.prescriptionId === prescriptionId);
+
+    if (index === -1) return { success: false, error: 'Prescription not found.' };
+    
+    if (prescriptions[index].is_dispensed) {
+      return { success: false, error: 'Prescription already dispensed.' };
+    }
+
+    prescriptions[index].is_dispensed = true;
+    writeTable<Prescription>('Prescription', prescriptions);
+
+    logActivity(operator.userId, operator.username, operator.role, `Dispensed Prescription (${prescriptionId})`, 'Prescription', prescriptionId);
+    return { success: true };
+  },
+
   // Inventory Management
   getInventory: (): InventoryItem[] => readTable<InventoryItem>('InventoryItem'),
   
-  addOrUpdateStock: (itemData: Omit<InventoryItem, 'itemId'> & { itemId?: string }, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+  addOrUpdateStock: (itemData: Omit<InventoryItem, 'id'> & { id?: number }, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
     const inventory = readTable<InventoryItem>('InventoryItem');
 
     // IR-06: Prevent stock quantity from being reduced below zero
-    if (itemData.quantityInStock < 0) {
+    if (itemData.quantity_in_stock < 0) {
       return { success: false, error: 'Stock levels cannot fall below zero.' };
     }
 
-    if (itemData.itemId) {
-      const index = inventory.findIndex(i => i.itemId === itemData.itemId);
+    if (itemData.id) {
+      const index = inventory.findIndex(i => i.id === itemData.id);
       if (index === -1) return { success: false, error: 'Item not found.' };
 
       inventory[index] = { ...inventory[index], ...itemData } as InventoryItem;
       writeTable<InventoryItem>('InventoryItem', inventory);
-      logActivity(operator.userId, operator.username, operator.role, `Updated Stock Item (${itemData.itemId})`, 'InventoryItem', itemData.itemId);
+      logActivity(operator.userId, operator.username, operator.role, `Updated Stock Item (${itemData.id})`, 'InventoryItem', String(itemData.id));
     } else {
-      const itemId = `item-${inventory.length + 1}`;
+      const id = inventory.length + 1;
       const newItem: InventoryItem = {
         ...itemData,
-        itemId
+        id
       };
       inventory.push(newItem);
       writeTable<InventoryItem>('InventoryItem', inventory);
-      logActivity(operator.userId, operator.username, operator.role, `Added New Inventory Stock Item (${itemId})`, 'InventoryItem', itemId);
+      logActivity(operator.userId, operator.username, operator.role, `Added New Inventory Stock Item (${id})`, 'InventoryItem', String(id));
     }
 
     return { success: true };
@@ -885,15 +950,15 @@ export const db = {
       if (!stock) {
         return { success: false, error: `Medicine '${disp.name}' not found in inventory.` };
       }
-      if (stock.quantityInStock < disp.quantity) {
-        return { success: false, error: `Insufficient stock for '${disp.name}'. Available: ${stock.quantityInStock}, Requested: ${disp.quantity}` };
+      if (stock.quantity_in_stock < disp.quantity) {
+        return { success: false, error: `Insufficient stock for '${disp.name}'. Available: ${stock.quantity_in_stock}, Requested: ${disp.quantity}` };
       }
     }
 
     // Deduct stock
     for (const disp of medicinesToDispense) {
       const index = inventory.findIndex(i => i.name.toLowerCase() === disp.name.toLowerCase());
-      inventory[index].quantityInStock -= disp.quantity;
+      inventory[index].quantity_in_stock -= disp.quantity;
     }
 
     writeTable<InventoryItem>('InventoryItem', inventory);
@@ -904,53 +969,61 @@ export const db = {
   // Billing and Payments
   getInvoices: (): Invoice[] => readTable<Invoice>('Invoice'),
   
-  generateInvoice: (patientId: string, items: InvoiceItem[], operator: { userId: string; username: string; role: string }): Invoice => {
+  generateInvoice: (patientId: string, items: InvoiceItem[], charges: { consultation_fee: number; medicine_charges: number; additional_charges: number }, operator: { userId: string; username: string; role: string }): Invoice => {
     const invoices = readTable<Invoice>('Invoice');
-    const invoiceId = `SC-INV-${String(invoices.length + 1).padStart(5, '0')}`;
+    const invoice_number = `SC-INV-${String(invoices.length + 1).padStart(5, '0')}`;
     
-    const totalAmount = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
+    const itemsTotal = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
+    const total_amount = charges.consultation_fee + charges.medicine_charges + charges.additional_charges + itemsTotal;
     
     const newInvoice: Invoice = {
-      invoiceId,
+      id: invoices.length + 1,
+      invoice_number,
       patientId,
       items,
-      totalAmount,
-      amountPaid: 0,
-      paymentMethod: '',
-      status: 'Unpaid',
-      issuedBy: operator.userId,
+      consultation_fee: charges.consultation_fee,
+      medicine_charges: charges.medicine_charges,
+      additional_charges: charges.additional_charges,
+      total_amount,
+      amount_paid: 0,
+      outstanding_balance: total_amount,
+      payment_method: '',
+      payment_status: 'Unpaid',
+      is_finalized: false,
+      issued_by: operator.userId,
       timestamp: new Date().toISOString()
     };
 
     invoices.push(newInvoice);
     writeTable<Invoice>('Invoice', invoices);
 
-    logActivity(operator.userId, operator.username, operator.role, `Generated Invoice (${invoiceId})`, 'Invoice', invoiceId);
+    logActivity(operator.userId, operator.username, operator.role, `Generated Invoice (${invoice_number})`, 'Invoice', invoice_number);
     return newInvoice;
   },
 
-  processPayment: (invoiceId: string, amount: number, method: Invoice['paymentMethod'], operator: { userId: string; username: string; role: string }): { success: boolean; invoice?: Invoice; error?: string } => {
+  processPayment: (invoice_number: string, amount: number, method: Invoice['payment_method'], operator: { userId: string; username: string; role: string }): { success: boolean; invoice?: Invoice; error?: string } => {
     const invoices = readTable<Invoice>('Invoice');
-    const index = invoices.findIndex(i => i.invoiceId === invoiceId);
+    const index = invoices.findIndex(i => i.invoice_number === invoice_number);
 
     if (index === -1) return { success: false, error: 'Invoice not found.' };
 
     const invoice = invoices[index];
-    const newAmountPaid = invoice.amountPaid + amount;
+    const newAmountPaid = invoice.amount_paid + amount;
 
-    if (newAmountPaid > invoice.totalAmount) {
-      return { success: false, error: `Excessive payment amount. Balance outstanding: ${invoice.totalAmount - invoice.amountPaid}` };
+    if (newAmountPaid > invoice.total_amount) {
+      return { success: false, error: `Excessive payment amount. Balance outstanding: ${invoice.total_amount - invoice.amount_paid}` };
     }
 
-    invoice.amountPaid = newAmountPaid;
-    invoice.paymentMethod = method;
-    invoice.status = newAmountPaid === invoice.totalAmount ? 'Paid' : 'Partially Paid';
+    invoice.amount_paid = newAmountPaid;
+    invoice.outstanding_balance = invoice.total_amount - newAmountPaid;
+    invoice.payment_method = method;
+    invoice.payment_status = newAmountPaid === invoice.total_amount ? 'Paid' : (newAmountPaid > 0 ? 'Partially Paid' : 'Unpaid');
     
     invoices[index] = invoice;
     writeTable<Invoice>('Invoice', invoices);
 
     // If invoice is fully paid and contains medicine items, trigger automated stock deduction
-    if (invoice.status === 'Paid') {
+    if (invoice.payment_status === 'Paid') {
       const medicinesToDispense = invoice.items
         .filter(item => item.type === 'medicine' && item.itemId)
         .map(item => ({
@@ -963,25 +1036,26 @@ export const db = {
       }
     }
 
-    logActivity(operator.userId, operator.username, operator.role, `Processed Invoice Payment of ${amount} (${invoiceId})`, 'Invoice', invoiceId);
+    logActivity(operator.userId, operator.username, operator.role, `Processed Invoice Payment of ${amount} (${invoice_number})`, 'Invoice', invoice_number);
     return { success: true, invoice };
   },
 
-  issueCreditNote: (invoiceId: string, reason: string, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
+  issueCreditNote: (invoice_number: string, reason: string, operator: { userId: string; username: string; role: string }): { success: boolean; error?: string } => {
     const invoices = readTable<Invoice>('Invoice');
-    const index = invoices.findIndex(i => i.invoiceId === invoiceId);
+    const index = invoices.findIndex(i => i.invoice_number === invoice_number);
 
     if (index === -1) return { success: false, error: 'Invoice not found.' };
 
     const invoice = invoices[index];
-    invoice.status = 'Unpaid';
-    invoice.amountPaid = 0;
+    invoice.payment_status = 'Unpaid';
+    invoice.amount_paid = 0;
+    invoice.outstanding_balance = invoice.total_amount;
     invoice.creditNoteReason = reason;
 
     invoices[index] = invoice;
     writeTable<Invoice>('Invoice', invoices);
 
-    logActivity(operator.userId, operator.username, operator.role, `Issued Credit Note for Invoice Correction (${invoiceId})`, 'Invoice', invoiceId);
+    logActivity(operator.userId, operator.username, operator.role, `Issued Credit Note for Invoice Correction (${invoice_number})`, 'Invoice', invoice_number);
     return { success: true };
   },
 
@@ -1011,5 +1085,23 @@ export const db = {
 
     logActivity(operator.userId, operator.username, operator.role, `Added Supplier Partner (${supplierId})`, 'Supplier', supplierId);
     return newSup;
+  },
+
+  // System Settings
+  getSystemSettings: (): SystemSettings => {
+    const settings = readTable<SystemSettings>('SystemSettings');
+    return settings[0] || {
+      hospital_name: 'Subhan Care Hospital',
+      hospital_address: '123 Main Street, Healthcare District',
+      hospital_phone: '+92 300 1234567',
+      default_tax_rate: 5,
+      default_consultation_fee: 1000
+    };
+  },
+  
+  updateSystemSettings: (newSettings: SystemSettings, operator: { userId: string; username: string; role: string }): { success: boolean } => {
+    writeTable<SystemSettings>('SystemSettings', [newSettings]);
+    logActivity(operator.userId, operator.username, operator.role, 'Updated System Global Settings', 'SystemSettings', 'settings');
+    return { success: true };
   }
 };

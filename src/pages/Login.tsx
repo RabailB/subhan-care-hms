@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Building, ShieldAlert, LogIn } from 'lucide-react';
 
-interface LoginProps {
-  onForgotPassword: () => void;
-}
-
-export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
+export const Login: React.FC = () => {
   const { login, user } = useAuth();
+  const navigate = useNavigate();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -141,7 +138,7 @@ export const Login: React.FC<LoginProps> = ({ onForgotPassword }) => {
 
               <button
                 type="button"
-                onClick={onForgotPassword}
+                onClick={() => navigate('/forgot-password')}
                 style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 500, cursor: 'pointer' }}
               >
                 Forgot Password?

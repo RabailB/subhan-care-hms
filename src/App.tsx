@@ -18,10 +18,21 @@ import { BookAppointmentPage } from './pages/BookAppointmentPage';
 
 // Role Dashboards
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuditLogsPage } from './pages/AuditLogsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { DoctorDashboard } from './pages/DoctorDashboard';
 import { ReceptionistDashboard } from './pages/ReceptionistDashboard';
-import { PharmacistDashboard } from './pages/PharmacistDashboard';
-import { BillingDashboard } from './pages/BillingDashboard';
+import { ConsultationFormPage } from './pages/ConsultationFormPage';
+
+// Pharmacy Module
+import { InventoryListPage } from './pages/InventoryListPage';
+import { PrescriptionQueuePage } from './pages/PrescriptionQueuePage';
+
+// Billing Module
+import { InvoiceListPage } from './pages/InvoiceListPage';
+import { CreateInvoicePage } from './pages/CreateInvoicePage';
+import { InvoicePrintView } from './pages/InvoicePrintView';
 
 // Shared Components
 import { Card } from './components/Card';
@@ -110,8 +121,9 @@ const DashboardLayoutWrapper: React.FC<{ activeId: string; children: React.React
       staff: '/dashboard',
       doctors: '/doctors',
       inventory: '/inventory',
-      audit: '/dashboard',
+      audit: '/audit-logs',
       reports: '/reports',
+      settings: '/settings',
       profile: '/profile',
       schedules: '/schedules',
       patients: '/patients',
@@ -140,12 +152,19 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<Login onForgotPassword={() => window.location.pathname = '/forgot-password'} />} />
-            <Route path="/forgot-password" element={<ForgotPassword onBackToLogin={() => window.location.pathname = '/login'} />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Root handler */}
             <Route path="/" element={<RootRedirect />} />
+
+            {/* Print Views (No layout wrapper) */}
+            <Route path="/invoice/print/:invoiceId" element={
+              <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
+                <InvoicePrintView />
+              </ProtectedRoute>
+            } />
 
             {/* Protected Dashboard Routes (Vite React Router v6) */}
             <Route path="/dashboard" element={
@@ -212,6 +231,14 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             } />
 
+            <Route path="/consultation/:appointmentId" element={
+              <ProtectedRoute allowedRoles={['Doctor']}>
+                <DashboardLayoutWrapper activeId="schedules">
+                  <ConsultationFormPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
             <Route path="/appointments" element={
               <ProtectedRoute allowedRoles={['Admin', 'Receptionist']}>
                 <DashboardLayoutWrapper activeId="appointments">
@@ -231,7 +258,7 @@ export const App: React.FC = () => {
             <Route path="/prescriptions" element={
               <ProtectedRoute allowedRoles={['Pharmacist']}>
                 <DashboardLayoutWrapper activeId="prescriptions">
-                  <PharmacistDashboard />
+                  <PrescriptionQueuePage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />
@@ -239,7 +266,7 @@ export const App: React.FC = () => {
             <Route path="/inventory" element={
               <ProtectedRoute allowedRoles={['Admin', 'Pharmacist']}>
                 <DashboardLayoutWrapper activeId="inventory">
-                  <SprintPlaceholder title="Inventory List" />
+                  <InventoryListPage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />
@@ -247,7 +274,15 @@ export const App: React.FC = () => {
             <Route path="/billing" element={
               <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
                 <DashboardLayoutWrapper activeId="billing">
-                  <BillingDashboard />
+                  <InvoiceListPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/billing/new" element={
+              <ProtectedRoute allowedRoles={['Admin', 'Billing Staff']}>
+                <DashboardLayoutWrapper activeId="billing">
+                  <CreateInvoicePage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />
@@ -255,7 +290,23 @@ export const App: React.FC = () => {
             <Route path="/reports" element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <DashboardLayoutWrapper activeId="reports">
-                  <SprintPlaceholder title="Reporting Analytics" />
+                  <ReportsPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/audit-logs" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <DashboardLayoutWrapper activeId="audit">
+                  <AuditLogsPage />
+                </DashboardLayoutWrapper>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/settings" element={
+              <ProtectedRoute allowedRoles={['Admin']}>
+                <DashboardLayoutWrapper activeId="settings">
+                  <SettingsPage />
                 </DashboardLayoutWrapper>
               </ProtectedRoute>
             } />

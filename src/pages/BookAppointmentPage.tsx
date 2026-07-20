@@ -72,8 +72,9 @@ export const BookAppointmentPage: React.FC = () => {
   const timeSlotsStatus = useMemo(() => {
     if (!selectedDoctor || !selectedDate) return [];
 
-    // Parse date weekday name
-    const dateObj = new Date(selectedDate);
+    // Parse date weekday name safely to avoid UTC off-by-one errors
+    const [y, m, d] = selectedDate.split('-');
+    const dateObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
 
     // Check if clinician works on this day
