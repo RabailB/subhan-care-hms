@@ -1090,7 +1090,13 @@ export const db = {
   // System Settings
   getSystemSettings: (): SystemSettings => {
     const settings = readTable<SystemSettings>('SystemSettings');
-    return settings[0];
+    return settings[0] || {
+      hospital_name: 'Subhan Care Hospital',
+      hospital_address: '123 Main Street, Healthcare District',
+      hospital_phone: '+92 300 1234567',
+      default_tax_rate: 5,
+      default_consultation_fee: 1000
+    };
   },
   
   updateSystemSettings: (newSettings: SystemSettings, operator: { userId: string; username: string; role: string }): { success: boolean } => {

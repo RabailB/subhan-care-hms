@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CreditCard, Search, FileText, CheckCircle, Clock, AlertTriangle, Plus, Printer } from 'lucide-react';
 import { db } from '../services/db';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +8,7 @@ import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 
 export const InvoiceListPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);

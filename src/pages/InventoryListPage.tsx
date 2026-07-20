@@ -43,8 +43,8 @@ export const InventoryListPage: React.FC = () => {
   };
 
   const filteredInventory = inventory.filter(i => 
-    i.name.toLowerCase().includes(search.toLowerCase()) || 
-    i.batch_number.toLowerCase().includes(search.toLowerCase())
+    (i.name || '').toLowerCase().includes(search.toLowerCase()) || 
+    (i.batch_number || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -107,7 +107,7 @@ export const InventoryListPage: React.FC = () => {
                       <div style={{ fontSize: '0.85rem' }}>{item.batch_number}</div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>{item.unit}</div>
                     </td>
-                    <td>Rs {item.unit_cost.toFixed(2)}</td>
+                    <td>Rs {(item.unit_cost || 0).toFixed(2)}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontWeight: 600 }}>{item.quantity_in_stock}</span>
