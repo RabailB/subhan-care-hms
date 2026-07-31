@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { Invoice, Patient } from '../types';
 
 export const InvoicePrintView: React.FC = () => {
   const { invoiceId } = useParams<{ invoiceId: string }>();
+  const { invoices, patients } = useDatabase();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [patient, setPatient] = useState<Patient | null>(null);
 
   useEffect(() => {
     if (invoiceId) {
-      const invs = db.getInvoices();
-      const inv = invs.find(i => i.invoice_number === invoiceId);
+      const inv = invoices.find(i => i.invoice_number === invoiceId);
       if (inv) {
         setInvoice(inv);
-        const pats = db.getPatients();
-        const pat = pats.find(p => p.patientId === inv.patientId);
+        const pat = patients.find(p => p.patientId === inv.patientId);
         if (pat) setPatient(pat);
       }
     }
-  }, [invoiceId]);
+  }, [invoiceId, invoices, patients]);
 
   useEffect(() => {
     if (invoice && patient) {

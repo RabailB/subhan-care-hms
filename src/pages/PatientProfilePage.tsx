@@ -72,8 +72,7 @@ export const PatientProfilePage: React.FC = () => {
     );
   }
 
-  // Handle Add Allergy
-  const handleAddAllergySubmit = () => {
+  const handleAddAllergySubmit = async () => {
     setAllergyError('');
     if (!allergenName.trim()) {
       setAllergyError('Please enter an allergen name.');
@@ -83,8 +82,9 @@ export const PatientProfilePage: React.FC = () => {
     if (!user) return;
 
     setAllergyLoading(true);
-    setTimeout(() => {
-      const res = dbOps.addPatientAllergy(
+    
+    try {
+      const res = await dbOps.addPatientAllergy(
         patient.patientId,
         {
           allergen_name: allergenName.trim(),
@@ -98,31 +98,36 @@ export const PatientProfilePage: React.FC = () => {
         }
       );
 
-      setAllergyLoading(false);
       if (res.success) {
         setAllergenName('');
         setShowAddAllergy(false);
-        refreshData();
       } else {
         setAllergyError(res.error || 'Failed to record allergy.');
       }
-    }, 800);
+    } catch (err) {
+      setAllergyError('Failed to record allergy.');
+    } finally {
+      setAllergyLoading(false);
+    }
   };
 
   // Handle Delete Allergy
-  const handleDeleteAllergy = (allergenName: string) => {
+  const handleDeleteAllergy = async (allergenName: string) => {
     if (!user) return;
     if (confirm(`Remove allergen '${allergenName}' from patient profile?`)) {
-      dbOps.deletePatientAllergy(
-        patient.patientId,
-        allergenName,
-        {
-          userId: user.userId,
-          username: user.username,
-          role: user.role
-        }
-      );
-      refreshData();
+      try {
+        await dbOps.deletePatientAllergy(
+          patient.patientId,
+          allergenName,
+          {
+            userId: user.userId,
+            username: user.username,
+            role: user.role
+          }
+        );
+      } catch (err) {
+        alert('Failed to delete allergy');
+      }
     }
   };
 

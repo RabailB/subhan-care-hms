@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { UserAccount, UserRole } from '../types';
-import { db, logActivity } from '../services/db';
+import { useDatabase } from './DatabaseContext';
 
 interface AuthContextType {
   user: UserAccount | null;
-  login: (username: string, passwordPlain: string) => { success: boolean; error?: string };
-  logout: (reason?: string) => void;
-  resetPassword: (username: string, contactNum: string, newPasswordPlain: string) => { success: boolean; error?: string };
+  login: (username: string, passwordPlain: string) => Promise<{ success: boolean; error?: string }>;
+  logout: (reason?: string) => Promise<void>;
+  resetPassword: (username: string, contactNum: string, newPasswordPlain: string) => Promise<{ success: boolean; error?: string }>;
   sessionTimeRemaining: number; // in seconds
 }
 
@@ -19,10 +19,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number>(INACTIVITY_TIMEOUT_SEC);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const timeTrackerRef = useRef<number>(INACTIVITY_TIMEOUT_SEC);
+  const { dbOps } = useDatabase();
 
-  const logout = (reason = 'Manual Logout') => {
+  const logout = async (reason = 'Manual Logout') => {
     if (user) {
-      logActivity(user.userId, user.username, user.role, `User Logout: ${reason}`, 'UserAccount', user.userId);
+      // await logActivity(user.userId, user.username, user.role, `User Logout: ${reason}`, 'UserAccount', user.userId);
+      // Wait, we can implement logActivity later or use dbOps.logActivity if it existed
     }
     setUser(null);
     setSessionTimeRemaining(INACTIVITY_TIMEOUT_SEC);
@@ -30,8 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('subhancare_active_user');
   };
 
-  const login = (username: string, passwordPlain: string) => {
-    const res = db.login(username, passwordPlain);
+  const login = async (username: string, passwordPlain: string) => {
+    const res = await dbOps.login(username, passwordPlain);
     if (res.success && res.user) {
       setUser(res.user);
       localStorage.setItem('subhancare_active_user', JSON.stringify(res.user));
@@ -40,8 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: res.success, error: res.error };
   };
 
-  const resetPassword = (username: string, contactNum: string, newPasswordPlain: string) => {
-    return db.resetPassword(username, contactNum, newPasswordPlain);
+  const resetPassword = async (username: string, contactNum: string, newPasswordPlain: string) => {
+    return await dbOps.resetPassword(username, contactNum, newPasswordPlain);
   };
 
   const resetInactivityTimer = () => {

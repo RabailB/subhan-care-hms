@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Calendar, User, FileText, Stethoscope, Clock, CheckCircle } from 'lucide-react';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { Appointment, Patient } from '../types';
 import { Button } from '../components/Button';
@@ -11,20 +11,11 @@ export const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  const { appointments: allApts, patients, doctors } = useDatabase();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
 
   useEffect(() => {
-    // Only fetch for the specific doctor (using their username or entityId mapping)
-    // In our mock, user.userId corresponds to the doctor. Wait, user.username might be the doctor name?
-    // In db.ts, user.userId usually maps to booked_by or doctorId. 
-    // We'll fetch all and filter by doctorId === user.entityId (if set) or just string match name
-    const allApts = db.getAppointments();
-    
-    // In a real app, user.entityId would be set to the doctorId. 
-    // For this prototype, we'll try to find the doctor ID by name, or just show all if not strictly mapped.
-    const docs = db.getDoctors();
-    const myDocProfile = docs.find(d => d.name === user?.username || d.doctorId === user?.entityId);
+    const myDocProfile = doctors.find(d => d.name === user?.username || d.doctorId === user?.entityId);
     
     if (myDocProfile) {
       setAppointments(allApts.filter(a => a.doctorId === myDocProfile.doctorId));
@@ -32,9 +23,7 @@ export const DoctorDashboard: React.FC = () => {
       // Fallback: show all if mapping isn't perfect in our mock data
       setAppointments(allApts);
     }
-    
-    setPatients(db.getPatients());
-  }, [user]);
+  }, [user, allApts, doctors]);
 
   const getPatientName = (patientId: string) => {
     return patients.find(p => p.patientId === patientId)?.full_name || patientId;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, Clock, Search, Pill } from 'lucide-react';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { Prescription, Patient, Doctor } from '../types';
 import { Modal } from '../components/Modal';
@@ -8,26 +8,24 @@ import { Button } from '../components/Button';
 
 export const PrescriptionQueuePage: React.FC = () => {
   const { user } = useAuth();
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const { prescriptions, patients, doctors, dbOps } = useDatabase();
   const [search, setSearch] = useState('');
   
   const [dispenseModalOpen, setDispenseModalOpen] = useState(false);
   const [selectedRx, setSelectedRx] = useState<Prescription | null>(null);
   const [dispenseQuantities, setDispenseQuantities] = useState<Record<number, number>>({});
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // useEffect(() => {
+  //   loadData();
+  // }, []);
 
-  const loadData = () => {
-    setPrescriptions(db.getPrescriptions());
-    setPatients(db.getPatients());
-    setDoctors(db.getDoctors());
-  };
+  // const loadData = () => {
+  //   setPrescriptions(db.getPrescriptions());
+  //   setPatients(db.getPatients());
+  //   setDoctors(db.getDoctors());
+  // };
 
-  const handleDispense = () => {
+  const handleDispense = async () => {
     if (!selectedRx) return;
 
     const itemsToDeduct = selectedRx.medicines.map((m, idx) => ({
@@ -35,30 +33,33 @@ export const PrescriptionQueuePage: React.FC = () => {
       quantity: dispenseQuantities[idx] || 1
     }));
     
-    // Deduct stock first
-    const dispRes = db.dispenseMedicines(itemsToDeduct, {
-      userId: user!.userId,
-      username: user!.username,
-      role: user!.role
-    });
+    try {
+      // Deduct stock first
+      const dispRes = await dbOps.dispenseMedicines(itemsToDeduct, {
+        userId: user!.userId,
+        username: user!.username,
+        role: user!.role
+      });
 
-    if (!dispRes.success) {
-      alert(dispRes.error);
-      return;
-    }
+      if (!dispRes.success) {
+        alert(dispRes.error);
+        return;
+      }
 
-    const res = db.markPrescriptionDispensed(selectedRx.prescriptionId, {
-      userId: user!.userId,
-      username: user!.username,
-      role: user!.role
-    });
+      const res = await dbOps.markPrescriptionDispensed(selectedRx.prescriptionId, {
+        userId: user!.userId,
+        username: user!.username,
+        role: user!.role
+      });
 
-    if (res.success) {
-      setDispenseModalOpen(false);
-      setSelectedRx(null);
-      loadData();
-    } else {
-      alert(res.error);
+      if (res.success) {
+        setDispenseModalOpen(false);
+        setSelectedRx(null);
+      } else {
+        alert(res.error);
+      }
+    } catch (err) {
+      alert('Failed to dispense prescription');
     }
   };
 

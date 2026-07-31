@@ -39,7 +39,7 @@ export const AdminDashboard: React.FC = () => {
     .filter(inv => inv.payment_status === 'Paid' || inv.payment_status === 'Partially Paid')
     .reduce((sum, inv) => sum + inv.amount_paid, 0);
 
-  const handleAddStaffSubmit = (e: React.FormEvent) => {
+  const handleAddStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -51,7 +51,7 @@ export const AdminDashboard: React.FC = () => {
 
     if (!user) return;
 
-    const res = dbOps.createStaff(
+    const res = await dbOps.createStaff(
       {
         name: staffName,
         role: staffRole,
@@ -77,10 +77,10 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleDeactivateStaff = (staffId: string) => {
+  const handleDeactivateStaff = async (staffId: string) => {
     if (!user) return;
     if (confirm('Are you sure you want to deactivate this staff member and revoke all access?')) {
-      dbOps.deactivateStaff(staffId, {
+      await dbOps.deactivateStaff(staffId, {
         userId: user.userId,
         username: user.username,
         role: user.role

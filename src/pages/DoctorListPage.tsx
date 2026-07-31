@@ -9,14 +9,13 @@ export const DoctorListPage: React.FC = () => {
   const { doctors, dbOps, refreshData } = useDatabase();
   const navigate = useNavigate();
 
-  const handleDeactivate = (docId: string, name: string) => {
+  const handleDeactivate = async (docId: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate clinician ${name} and lock their account access?`)) {
       const activeUser = localStorage.getItem('subhancare_active_user');
       if (activeUser) {
         try {
           const operator = JSON.parse(activeUser);
-          dbOps.deactivateDoctor(docId, operator);
-          refreshData();
+          await dbOps.deactivateDoctor(docId, operator);
         } catch {
           // ignore
         }

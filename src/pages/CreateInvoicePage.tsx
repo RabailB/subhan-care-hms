@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FilePlus, Save, Users, CreditCard, Activity } from 'lucide-react';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { Patient, InvoiceItem } from '../types';
 import { Button } from '../components/Button';
 
 export const CreateInvoicePage: React.FC = () => {
   const { user } = useAuth();
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const { patients, dbOps } = useDatabase();
   
   const [patientId, setPatientId] = useState('');
   const [consultationFee, setConsultationFee] = useState<number>(0);
@@ -16,9 +16,9 @@ export const CreateInvoicePage: React.FC = () => {
   
   const [dynamicItems, setDynamicItems] = useState<InvoiceItem[]>([]);
   
-  useEffect(() => {
-    setPatients(db.getPatients());
-  }, []);
+  // useEffect(() => {
+  //   setPatients(db.getPatients());
+  // }, []);
 
   const totalAmount = consultationFee + medicineCharges + additionalCharges + 
     dynamicItems.reduce((acc, item) => acc + (item.amount * item.quantity), 0);
@@ -37,7 +37,7 @@ export const CreateInvoicePage: React.FC = () => {
     setDynamicItems(dynamicItems.filter((_, i) => i !== index));
   };
 
-  const handleGenerateInvoice = () => {
+  const handleGenerateInvoice = async () => {
     if (!patientId) {
       alert('Please select a patient first.');
       return;
@@ -50,29 +50,33 @@ export const CreateInvoicePage: React.FC = () => {
 
     const validItems = dynamicItems.filter(i => i.description && i.amount > 0 && i.quantity > 0);
 
-    const invoice = db.generateInvoice(
-      patientId,
-      validItems,
-      {
-        consultation_fee: consultationFee,
-        medicine_charges: medicineCharges,
-        additional_charges: additionalCharges
-      },
-      {
-        userId: user!.userId,
-        username: user!.username,
-        role: user!.role
-      }
-    );
+    try {
+      const invoice = await dbOps.generateInvoice(
+        patientId,
+        validItems,
+        {
+          consultation_fee: consultationFee,
+          medicine_charges: medicineCharges,
+          additional_charges: additionalCharges
+        },
+        {
+          userId: user!.userId,
+          username: user!.username,
+          role: user!.role
+        }
+      );
 
-    if (invoice) {
-      alert(`Invoice ${invoice.invoice_number} generated successfully!`);
-      // Reset form
-      setPatientId('');
-      setConsultationFee(0);
-      setMedicineCharges(0);
-      setAdditionalCharges(0);
-      setDynamicItems([]);
+      if (invoice) {
+        alert(`Invoice ${invoice.invoice_number} generated successfully!`);
+        // Reset form
+        setPatientId('');
+        setConsultationFee(0);
+        setMedicineCharges(0);
+        setAdditionalCharges(0);
+        setDynamicItems([]);
+      }
+    } catch (err) {
+      alert('Failed to generate invoice');
     }
   };
 

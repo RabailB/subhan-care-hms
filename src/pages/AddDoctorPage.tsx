@@ -56,7 +56,7 @@ export const AddDoctorPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -99,8 +99,8 @@ export const AddDoctorPage: React.FC = () => {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const res = dbOps.createDoctor(
+    try {
+      const res = await dbOps.createDoctor(
         {
           name: name.trim(),
           specialization,
@@ -129,7 +129,10 @@ export const AddDoctorPage: React.FC = () => {
       } else {
         setError('Failed to register doctor profile.');
       }
-    }, 1200);
+    } catch (err) {
+      setLoading(false);
+      setError('An error occurred while creating doctor profile.');
+    }
   };
 
   return (

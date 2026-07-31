@@ -55,13 +55,13 @@ export const AppointmentListPage: React.FC = () => {
   }, [appointments, doctorFilter, statusFilter, dateFilter]);
 
   // Handle Cancel Appointment
-  const handleCancelConfirm = () => {
+  const handleCancelConfirm = async () => {
     if (!cancelTarget || !user) return;
     setCancelLoading(true);
     
-    setTimeout(() => {
+    try {
       const reasonText = cancelReason === 'Other' ? cancelReasonDetail : cancelReason;
-      dbOps.updateAppointmentStatus(
+      await dbOps.updateAppointmentStatus(
         cancelTarget.appointmentId,
         'Cancelled',
         reasonText,
@@ -76,11 +76,13 @@ export const AppointmentListPage: React.FC = () => {
       setCancelReason('Patient Request');
       setCancelReasonDetail('');
       refreshData();
-    }, 800);
+    } catch (err) {
+      setCancelLoading(false);
+    }
   };
 
   // Handle Reschedule Appointment
-  const handleRescheduleConfirm = () => {
+  const handleRescheduleConfirm = async () => {
     setRescheduleError('');
     if (!rescheduleTarget || !user) return;
     if (!rescheduleDate || !rescheduleSlot) {
@@ -89,9 +91,9 @@ export const AppointmentListPage: React.FC = () => {
     }
 
     setRescheduleLoading(true);
-    setTimeout(() => {
+    try {
       // First cancel the old one
-      dbOps.updateAppointmentStatus(
+      await dbOps.updateAppointmentStatus(
         rescheduleTarget.appointmentId,
         'Cancelled',
         'Rescheduled to new slot',
@@ -103,7 +105,7 @@ export const AppointmentListPage: React.FC = () => {
       );
 
       // Book a new one
-      const res = dbOps.bookAppointment(
+      const res = await dbOps.bookAppointment(
         {
           patientId: rescheduleTarget.patientId,
           doctorId: rescheduleTarget.doctorId,
@@ -127,7 +129,7 @@ export const AppointmentListPage: React.FC = () => {
         refreshData();
       } else {
         // Rollback cancel if new booking fails (not needed for mock but clean)
-        dbOps.updateAppointmentStatus(
+        await dbOps.updateAppointmentStatus(
           rescheduleTarget.appointmentId,
           'Scheduled',
           '',
@@ -139,7 +141,10 @@ export const AppointmentListPage: React.FC = () => {
         );
         setRescheduleError(res.error || 'Failed to book slot.');
       }
-    }, 1200);
+    } catch (err) {
+      setRescheduleLoading(false);
+      setRescheduleError('Failed to reschedule.');
+    }
   };
 
   // Available slots logic helper for rescheduling

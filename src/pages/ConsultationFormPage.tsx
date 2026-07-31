@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { Patient, Consultation, Appointment, InventoryItem, PrescriptionMedicine } from '../types';
 import { Card } from '../components/Card';
@@ -12,11 +12,11 @@ export const ConsultationFormPage: React.FC = () => {
   const { appointmentId } = useParams<{ appointmentId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { appointments, patients, inventory, dbOps } = useDatabase();
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [patient, setPatient] = useState<Patient | null>(null);
   const [consultation, setConsultation] = useState<Consultation | null>(null);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   // Form Fields
   const [bloodPressure, setBloodPressure] = useState('');
@@ -38,43 +38,49 @@ export const ConsultationFormPage: React.FC = () => {
   const [isFinalized, setIsFinalized] = useState(false);
 
   useEffect(() => {
-    if (!appointmentId || !user) return;
+    const init = async () => {
+      if (!appointmentId || !user) return;
 
-    const apts = db.getAppointments();
-    const apt = apts.find(a => a.appointmentId === appointmentId);
-    if (!apt) {
-      alert("Appointment not found");
-      navigate('/schedules');
-      return;
-    }
-    setAppointment(apt);
+      const apt = appointments.find(a => a.appointmentId === appointmentId);
+      if (!apt) {
+        // If not loaded yet, wait for Firebase, but if we assume it's loaded:
+        if (appointments.length > 0) {
+          alert("Appointment not found");
+          navigate('/schedules');
+        }
+        return;
+      }
+      setAppointment(apt);
 
-    const pats = db.getPatients();
-    const pat = pats.find(p => p.patientId === apt.patientId);
-    if (pat) setPatient(pat);
+      const pat = patients.find(p => p.patientId === apt.patientId);
+      if (pat) setPatient(pat);
 
-    const cons = db.startConsultation(apt.appointmentId, apt.patientId, apt.doctorId, {
-      userId: user.userId, username: user.username, role: user.role
-    });
-    setConsultation(cons);
+      try {
+        const cons = await dbOps.startConsultation(apt.appointmentId, apt.patientId, apt.doctorId, {
+          userId: user.userId, username: user.username, role: user.role
+        });
+        setConsultation(cons);
 
-    if (cons) {
-      setBloodPressure(cons.blood_pressure || '');
-      setTemperature(cons.temperature ? String(cons.temperature) : '');
-      setWeight(cons.weight_kg ? String(cons.weight_kg) : '');
-      setChiefComplaint(cons.chief_complaint || '');
-      setDiagnosis(cons.diagnosis_description || '');
-      setClinicalNotes(cons.clinical_notes || '');
-      setIsFinalized(cons.is_finalized);
-    }
+        if (cons) {
+          setBloodPressure(cons.blood_pressure || '');
+          setTemperature(cons.temperature ? String(cons.temperature) : '');
+          setWeight(cons.weight_kg ? String(cons.weight_kg) : '');
+          setChiefComplaint(cons.chief_complaint || '');
+          setDiagnosis(cons.diagnosis_description || '');
+          setClinicalNotes(cons.clinical_notes || '');
+          setIsFinalized(cons.is_finalized);
+        }
 
-    setInventory(db.getInventory());
-
-    // Trigger Allergy Warning
-    if (pat?.allergies && pat.allergies.length > 0 && !cons.is_finalized) {
-      setAllergyModalOpen(true);
-    }
-  }, [appointmentId, user, navigate]);
+        // Trigger Allergy Warning
+        if (pat?.allergies && pat.allergies.length > 0 && !cons.is_finalized) {
+          setAllergyModalOpen(true);
+        }
+      } catch (err) {
+        console.error("Failed to start consultation", err);
+      }
+    };
+    init();
+  }, [appointmentId, user, navigate, appointments, patients, dbOps]);
 
   const handleAddMedicine = () => {
     if (!selectedMedicine || !dosage || !frequency || !duration) {
@@ -112,40 +118,44 @@ export const ConsultationFormPage: React.FC = () => {
       return;
     }
 
-    const res = db.saveConsultation(consultation.consultationId, {
-      chief_complaint: chiefComplaint,
-      diagnosis_description: diagnosis,
-      clinical_notes: clinicalNotes,
-      blood_pressure: bloodPressure,
-      temperature: temperature ? parseFloat(temperature) : undefined,
-      weight_kg: weight ? parseFloat(weight) : undefined,
-      is_finalized: finalize
-    }, {
-      userId: user.userId, username: user.username, role: user.role
-    });
+    try {
+      const res = await dbOps.saveConsultation(consultation.consultationId, {
+        chief_complaint: chiefComplaint,
+        diagnosis_description: diagnosis,
+        clinical_notes: clinicalNotes,
+        blood_pressure: bloodPressure,
+        temperature: temperature ? parseFloat(temperature) : undefined,
+        weight_kg: weight ? parseFloat(weight) : undefined,
+        is_finalized: finalize
+      }, {
+        userId: user.userId, username: user.username, role: user.role
+      });
 
-    if (res.success) {
-      if (finalize && medicines.length > 0) {
-        // Generate Prescription
-        db.createPrescription({
-          consultationId: consultation.consultationId,
-          patientId: consultation.patientId,
-          doctorId: consultation.doctorId,
-          medicines: medicines
-        }, {
-          userId: user.userId, username: user.username, role: user.role
-        });
-      }
+      if (res.success) {
+        if (finalize && medicines.length > 0) {
+          // Generate Prescription
+          await dbOps.createPrescription({
+            consultationId: consultation.consultationId,
+            patientId: consultation.patientId,
+            doctorId: consultation.doctorId,
+            medicines: medicines
+          }, {
+            userId: user.userId, username: user.username, role: user.role
+          });
+        }
 
-      if (finalize) {
-        setIsFinalized(true);
-        alert("Consultation Finalized and Prescription Generated successfully!");
-        navigate('/schedules');
+        if (finalize) {
+          setIsFinalized(true);
+          alert("Consultation Finalized and Prescription Generated successfully!");
+          navigate('/schedules');
+        } else {
+          alert("Draft saved successfully.");
+        }
       } else {
-        alert("Draft saved successfully.");
+        alert(res.error);
       }
-    } else {
-      alert(res.error);
+    } catch (err) {
+      alert('Failed to save consultation.');
     }
   };
 

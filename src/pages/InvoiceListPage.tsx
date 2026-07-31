@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Search, FileText, CheckCircle, Clock, AlertTriangle, Plus, Printer } from 'lucide-react';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { Invoice, Patient } from '../types';
 import { Modal } from '../components/Modal';
@@ -10,8 +10,7 @@ import { Button } from '../components/Button';
 export const InvoiceListPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const { invoices, patients, dbOps } = useDatabase();
   const [search, setSearch] = useState('');
   
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -19,16 +18,16 @@ export const InvoiceListPage: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<Invoice['payment_method']>('Cash');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // useEffect(() => {
+  //   loadData();
+  // }, []);
 
-  const loadData = () => {
-    setInvoices(db.getInvoices().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    setPatients(db.getPatients());
-  };
+  // const loadData = () => {
+  //   setInvoices(db.getInvoices().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+  //   setPatients(db.getPatients());
+  // };
 
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     if (!selectedInvoice) return;
     if (paymentAmount <= 0) {
       alert('Payment amount must be greater than 0');
@@ -39,18 +38,21 @@ export const InvoiceListPage: React.FC = () => {
       return;
     }
 
-    const res = db.processPayment(selectedInvoice.invoice_number, paymentAmount, paymentMethod, {
-      userId: user!.userId,
-      username: user!.username,
-      role: user!.role
-    });
+    try {
+      const res = await dbOps.processPayment(selectedInvoice.invoice_number, paymentAmount, paymentMethod, {
+        userId: user!.userId,
+        username: user!.username,
+        role: user!.role
+      });
 
-    if (res.success) {
-      setPaymentModalOpen(false);
-      setSelectedInvoice(null);
-      loadData();
-    } else {
-      alert(res.error);
+      if (res.success) {
+        setPaymentModalOpen(false);
+        setSelectedInvoice(null);
+      } else {
+        alert(res.error);
+      }
+    } catch (err) {
+      alert('Failed to process payment');
     }
   };
 

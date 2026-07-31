@@ -26,20 +26,24 @@ export const SettingsPage: React.FC = () => {
     }
   }, [systemSettings]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
-    const res = dbOps.updateSystemSettings(formData, {
-      userId: user.userId,
-      username: user.username,
-      role: user.role
-    });
+    try {
+      const res = await dbOps.updateSystemSettings(formData, {
+        userId: user.userId,
+        username: user.username,
+        role: user.role
+      });
 
-    if (res.success) {
-      setMessage({ text: 'System settings updated successfully.', type: 'success' });
-      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
-    } else {
+      if (res.success) {
+        setMessage({ text: 'System settings updated successfully.', type: 'success' });
+        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+      } else {
+        setMessage({ text: 'Failed to update settings.', type: 'error' });
+      }
+    } catch (err) {
       setMessage({ text: 'Failed to update settings.', type: 'error' });
     }
   };

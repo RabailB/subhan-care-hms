@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, AlertCircle, Edit, Search } from 'lucide-react';
-import { db } from '../services/db';
+import { useDatabase } from '../context/DatabaseContext';
 import { useAuth } from '../context/AuthContext';
 import { InventoryItem } from '../types';
 import { Modal } from '../components/Modal';
@@ -8,37 +8,40 @@ import { Button } from '../components/Button';
 
 export const InventoryListPage: React.FC = () => {
   const { user } = useAuth();
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const { inventory, dbOps } = useDatabase();
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
-  useEffect(() => {
-    loadInventory();
-  }, []);
+  // useEffect(() => {
+  //   loadInventory();
+  // }, []);
 
-  const loadInventory = () => {
-    setInventory(db.getInventory());
-  };
+  // const loadInventory = () => {
+  //   setInventory(db.getInventory());
+  // };
 
-  const handleSaveItem = () => {
+  const handleSaveItem = async () => {
     if (!editingItem?.name || editingItem.quantity_in_stock === undefined || editingItem.reorder_threshold === undefined) {
       alert('Please fill in required fields: Name, Quantity, Threshold');
       return;
     }
 
-    const res = db.addOrUpdateStock(editingItem as Omit<InventoryItem, 'id'>, {
-      userId: user!.userId,
-      username: user!.username,
-      role: user!.role
-    });
+    try {
+      const res = await dbOps.addOrUpdateStock(editingItem as Omit<InventoryItem, 'id'>, {
+        userId: user!.userId,
+        username: user!.username,
+        role: user!.role
+      });
 
-    if (res.success) {
-      setIsModalOpen(false);
-      setEditingItem(null);
-      loadInventory();
-    } else {
-      alert(res.error);
+      if (res.success) {
+        setIsModalOpen(false);
+        setEditingItem(null);
+      } else {
+        alert(res.error);
+      }
+    } catch (err) {
+      alert('Failed to save item');
     }
   };
 

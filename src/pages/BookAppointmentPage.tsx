@@ -98,7 +98,7 @@ export const BookAppointmentPage: React.FC = () => {
   }, [selectedDoctor, selectedDate, appointments]);
 
   // Proceed with booking slot
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     setError('');
     if (!selectedPatient || !selectedDoctor || !selectedDate || !selectedSlot) {
       setError('Please finalize all selections including patient, clinician, date and time slot.');
@@ -111,8 +111,8 @@ export const BookAppointmentPage: React.FC = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const res = dbOps.bookAppointment(
+    try {
+      const res = await dbOps.bookAppointment(
         {
           patientId: selectedPatient.patientId,
           doctorId: selectedDoctor.doctorId,
@@ -135,7 +135,10 @@ export const BookAppointmentPage: React.FC = () => {
       } else {
         setError(res.error || 'Failed to schedule appointment.');
       }
-    }, 1500);
+    } catch (err) {
+      setLoading(false);
+      setError('An error occurred during booking.');
+    }
   };
 
   return (

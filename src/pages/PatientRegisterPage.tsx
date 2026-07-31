@@ -45,7 +45,7 @@ export const PatientRegisterPage: React.FC = () => {
     setCnic(formatted);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -80,8 +80,8 @@ export const PatientRegisterPage: React.FC = () => {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const res = dbOps.registerPatient(
+    try {
+      const res = await dbOps.registerPatient(
         {
           full_name: fullName.trim(),
           date_of_birth: dob,
@@ -101,14 +101,16 @@ export const PatientRegisterPage: React.FC = () => {
         }
       );
 
-      setLoading(false);
-
       if (res.success && res.patient) {
         navigate(`/patients/${res.patient.patientId}`);
       } else {
         setError(res.error || 'Failed to complete patient registration.');
       }
-    }, 1200);
+    } catch (err) {
+      setError('Failed to complete patient registration.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
