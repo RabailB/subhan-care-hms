@@ -48,7 +48,6 @@ api.interceptors.response.use(
         if (session) {
           const user = JSON.parse(session);
           // Mocking token refresh API call
-          console.log('Intercepted 401: Refreshing JWT access token silently...');
           
           // On successful refresh, update request authorization header and retry
           originalRequest.headers.Authorization = `Bearer mock_refreshed_jwt_access_token_role_${user.role}`;

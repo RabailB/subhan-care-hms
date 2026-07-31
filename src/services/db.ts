@@ -84,7 +84,7 @@ const INITIAL_USERS: UserAccount[] = [
     userId: 'usr-admin',
     username: 'admin',
     email: 'admin@subhancare.pk',
-    passwordHash: 'admin123', // In a real app this is bcrypt, we will do a simple match simulation
+    passwordHash: 'admin123',
     role: 'Admin',
     entityType: 'Staff',
     entityId: 'admin',
@@ -871,7 +871,7 @@ export const db = {
   getPrescriptions: (): Prescription[] => readTable<Prescription>('Prescription'),
   
   createPrescription: (prescriptionData: Omit<Prescription, 'prescriptionId' | 'timestamp'>, operator: { userId: string; username: string; role: string }): { success: boolean; prescription?: Prescription; error?: string } => {
-    if (operator.role !== 'doctor') {
+    if (operator.role !== 'Doctor') {
       return { success: false, error: 'Unauthorized. Only Doctors can write prescriptions.' };
     }
 
@@ -1061,7 +1061,7 @@ export const db = {
 
   // Audit Logs
   getAuditLogs: (operatorRole: string): AuditLog[] => {
-    if (operatorRole !== 'admin') {
+    if (operatorRole !== 'Admin') {
       return []; // Secure restricted access
     }
     return readTable<AuditLog>('AuditLog');
